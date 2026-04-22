@@ -1,0 +1,20 @@
+{
+  "secret": "{{mc_webhook_secret}}",
+  "channel": "instagram",
+  "lead_type": "{{lead_type}}",
+  "user_id": "{{contact.id}}",
+  "user_name": "{{contact.name}}",
+  "last_user_message": "{{last_text_input}}",
+  "context": {
+    "previous_answers": {
+      "budget": "{{budget}}",
+      "intent": "{{intent}}",
+      "area": "{{area}}",
+      "listing_count": "{{listing_count}}",
+      "lead_source": "{{lead_source}}",
+      "urgency": "{{urgency}}"
+    },
+    "property_summary": "{{property_summary}}",
+    "service_summary": "{{service_summary}}"
+  }
+}

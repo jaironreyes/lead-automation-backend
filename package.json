@@ -1,0 +1,17 @@
+{
+  "name": "lead-automation-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend for ManyChat + OpenAI lead qualification for buyers and agents.",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "openai": "^5.12.2",
+    "zod": "^3.24.1"
+  }
+}

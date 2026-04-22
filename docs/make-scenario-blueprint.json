@@ -1,0 +1,41 @@
+{
+  "name": "manychat-openai-lead-qualifier-blueprint",
+  "description": "Conceptual Make scenario layout. Build it manually inside Make.",
+  "modules": [
+    {
+      "order": 1,
+      "app": "Webhooks",
+      "module": "Custom webhook",
+      "purpose": "Receive data from ManyChat external request"
+    },
+    {
+      "order": 2,
+      "app": "Tools",
+      "module": "Set variable",
+      "purpose": "Normalize buyer vs agent payload and build prompt context"
+    },
+    {
+      "order": 3,
+      "app": "HTTP",
+      "module": "Make a request",
+      "purpose": "POST to https://api.openai.com/v1/responses with structured JSON output"
+    },
+    {
+      "order": 4,
+      "app": "JSON",
+      "module": "Parse JSON",
+      "purpose": "Parse AI JSON reply"
+    },
+    {
+      "order": 5,
+      "app": "Webhook response",
+      "module": "Return data",
+      "purpose": "Return reply_text, status, extracted fields, and note back to ManyChat"
+    }
+  ],
+  "notes": [
+    "Use a shared secret in the incoming webhook body.",
+    "Keep the webhook response module at the end.",
+    "If you expect many parallel leads, consider sequential processing only when order matters."
+  ]
+}
