@@ -13,7 +13,7 @@ function requireEnv(name, fallback = undefined) {
 export const config = {
   port: Number(process.env.PORT || 3000),
   openAiApiKey: requireEnv('OPENAI_API_KEY'),
-  openAiModel: process.env.OPENAI_MODEL || ''gpt-4o-mini'',
+  openAiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
   webhookSecret: requireEnv('WEBHOOK_SECRET'),
   defaultLanguage: process.env.DEFAULT_LANGUAGE || 'es-DO',
   escalationPhone: process.env.ESCALATION_PHONE || ''
