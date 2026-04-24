@@ -5,6 +5,45 @@ import { buildSystemPrompt } from './prompt.js';
 import { responseJsonSchema } from './schemas.js';
 import { buildConversationInput, inboundSchema } from './leadRouter.js';
 
+function normalizeSpanish(text) {
+  return text
+    // accents
+    .replace(/manana/gi, 'mañana')
+    .replace(/tarde(cita)?/gi, 'tarde')
+    .replace(/temprano/gi, 'en la mañana')
+    .replace(/tardecita/gi, 'en la tarde')
+    .replace(/nochecita/gi, 'en la noche')
+    .replace(/si\b/gi, 'sí')
+
+    // normalize informal phrases
+    .replace(/tipo\s*(\d+)/gi, '$1')
+    .replace(/como a las?\s*(\d+)/gi, '$1')
+    .replace(/eso de las?\s*(\d+)/gi, '$1');
+}
+function interpretTime(text) {
+  const msg = text.toLowerCase();
+
+  if (msg.includes('mañana') || msg.includes('temprano')) {
+    return 'en la mañana (9:00 AM aprox.)';
+  }
+
+  if (msg.includes('tarde')) {
+    return 'en la tarde (3:00 PM aprox.)';
+  }
+
+  if (msg.includes('noche')) {
+    return 'en la noche (6:30 PM aprox.)';
+  }
+
+  // exact hour
+  const hourMatch = msg.match(/\b(\d{1,2})(:\d{2})?\b/);
+  if (hourMatch) {
+    return hourMatch[0];
+  }
+
+  return text;
+}
+
 const app = express();
 const openai = new OpenAI({ apiKey: config.openAiApiKey });
 
@@ -278,9 +317,9 @@ app.post('/webhooks/manychat', async (req, res) => {
       /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
 
     if (hasVisitTime) {
-      return res.json({
-        ok: true,
-        reply_text: `Perfecto 🔥 Queda anotado para ${payload.last_user_message}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
+      const cleanMsg = normalizeSpanish(payload.last_user_message);
+      const finalTime = interpretTime(cleanMsg);
+        reply_text: `Perfecto 🔥 Queda anotado para ${finalTime}.`,
         status: 'handoff',
         next_step_label: 'handoff_human',
         extracted: {},
