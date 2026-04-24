@@ -137,6 +137,23 @@ if (softCloseOnly && hesitationStage) {
     owner_phone: config.escalationPhone
   });
 } 
+const isMinimumAsk =
+  userMsg.includes('lo minimo') ||
+  userMsg.includes('mínimo') ||
+  userMsg.includes('minimo') ||
+  userMsg.includes('lo menos') ||
+  userMsg.includes('precio final');
+    if (isMinimumAsk) {
+  return res.json({
+    ok: true,
+    reply_text: 'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\nLo ideal es que la veas primero y así evalúas si realmente te conviene. ¿Te gustaría visitarla?',
+    status: 'continue',
+    next_step_label: 'visit_interest',
+    extracted: {},
+    internal_note: 'Minimum price negotiation handled',
+    owner_phone: config.escalationPhone
+  });
+}
 const priceNumber = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
 
 const mentionsPrice =
