@@ -69,7 +69,6 @@ app.post('/webhooks/manychat', async (req, res) => {
 if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
 
   const msg = String(payload.last_user_message || '').toLowerCase();
-const msg = String(payload.last_user_message || '').toLowerCase();
 
 const hasPhoneNumber = /\b(809|829|849)[-\s]?\d{3}[-\s]?\d{4}\b/.test(msg);
 
