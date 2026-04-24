@@ -112,11 +112,7 @@ return res.json({
   internal_note: 'Handoff handled',
   owner_phone: config.escalationPhone
 });
-  let reply = 'Perfecto 👍 Seguimos por aquí mismo.\n\nTe paso la ubicación y coordinamos la visita por este DM.';
-
-  if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
-    reply = 'No hay problema 👍 Podemos seguir por aquí mismo en Instagram.\n\nTe paso la ubicación y coordinamos todo por este DM.';
-  }
+  
 if (
   msg.includes('whatsapp') &&
   (msg.includes('tienes') || msg.includes('tiene') || msg.includes('mi'))
