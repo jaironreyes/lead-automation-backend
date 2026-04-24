@@ -74,7 +74,7 @@ const wantsVisit =
   msg.includes('ver') || msg.includes('visita') || msg.includes('interesa') || msg.includes('quiero') || msg.includes('si') || msg.includes('sí');
 
 if (payload.lead_type === 'buyer') {
-  if (stage === 'ask_budget' && hasBudget) {
+  if ((stage === 'ask_budget' || stage === '' || stage === 'unknown') && hasBudget) {
     forcedNextStep = 'ask_intent';
     forcedReply = 'Perfecto 🔥 Ese presupuesto encaja. ¿La buscas para vivir o para invertir?';
   }
