@@ -157,8 +157,29 @@ app.post('/webhooks/manychat', async (req, res) => {
     internal_note: 'Exact location sent',
     owner_phone: config.escalationPhone
   });
+    if (
+      msg === 'bien' ||
+      msg.includes('mandala') ||
+      msg.includes('mándala') ||
+      msg.includes('pasamela') ||
+      msg.includes('pásamela') ||
+      msg.includes('enviamela') ||
+      msg.includes('envíamela') ||
+      msg.includes('ubicación') ||
+      msg.includes('ubicacion')
+) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Exact location sent',
+    owner_phone: config.escalationPhone
+  });
 }
-      return res.json({
+}
+        return res.json({
         ok: true,
         reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
         status: 'handoff',
