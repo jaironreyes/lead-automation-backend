@@ -34,6 +34,8 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
     'Rules:',
     '- Do not restart the conversation.',
     '- Do not repeat a question already answered.',
+    '- If the current stage is schedule_visit and the user asks a property question, answer it briefly and continue asking for day/time. Do NOT ask again if they want to visit.',
+'- Once the bot has already asked for day/time, never go back to asking if the user wants to see the property.',
     '- If the user asks about seeing the property, visiting, or availability, immediately move to scheduling the visit.',
 '- Do NOT ask any more qualification questions once the user shows intent to visit.',
 '- Prioritize scheduling over further qualification.',
