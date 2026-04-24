@@ -55,10 +55,49 @@ app.post('/webhooks/manychat', async (req, res) => {
       throw new Error('No model output_text returned.');
     }
 
-    const parsed = JSON.parse(rawText);
-    const finalReply = parsed.status === 'handoff'
-      ? buildHandoffMessage(payload.lead_type)
-      : parsed.reply_text;
+const parsed = JSON.parse(rawText);
+
+// Force stage progression for buyer leads
+let forcedNextStep = parsed.next_step_label;
+let forcedReply = parsed.reply_text;
+
+const msg = String(payload.last_user_message || '').toLowerCase();
+const stage = String(payload.lead_stage || '').toLowerCase();
+
+const hasBudget =
+  /\d/.test(msg) || msg.includes('millon') || msg.includes('millón') || msg.includes('millones');
+
+const hasIntent =
+  msg.includes('vivir') || msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión');
+
+const wantsVisit =
+  msg.includes('ver') || msg.includes('visita') || msg.includes('interesa') || msg.includes('quiero') || msg.includes('si') || msg.includes('sí');
+
+if (payload.lead_type === 'buyer') {
+  if (stage === 'ask_budget' && hasBudget) {
+    forcedNextStep = 'ask_intent';
+    forcedReply = 'Perfecto 🔥 Ese presupuesto encaja. ¿La buscas para vivir o para invertir?';
+  }
+
+  if (stage === 'ask_intent' && hasIntent) {
+    forcedNextStep = 'visit_interest';
+
+    if (msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión')) {
+      forcedReply = 'Buenísimo 👌 Como inversión tiene potencial porque está en obra gris y puedes terminarla con estrategia. ¿Te gustaría verla en persona?';
+    } else {
+      forcedReply = 'Perfecto 👌 Para vivir puede ser una buena opción porque la terminas a tu gusto. ¿Te gustaría verla en persona?';
+    }
+  }
+
+  if (stage === 'visit_interest' && wantsVisit) {
+    forcedNextStep = 'schedule_visit';
+    forcedReply = 'Perfecto 🔥 ¿Qué día te queda mejor para coordinar la visita?';
+  }
+}
+
+const finalReply = parsed.status === 'handoff'
+  ? buildHandoffMessage(payload.lead_type)
+  : forcedReply;
 
     return res.json({
       ok: true,
