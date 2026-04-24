@@ -137,6 +137,21 @@ if (softCloseOnly && hesitationStage) {
     owner_phone: config.escalationPhone
   });
 } 
+    const isLowball =
+  userMsg.includes('millones') &&
+  parseFloat(userMsg.replace(/[^0-9.]/g, '')) < 4.0;
+
+if (isLowball) {
+  return res.json({
+    ok: true,
+    reply_text: 'Entiendo 👍 Pero por ese rango se queda fuera del valor actual de la propiedad.\n\nSi quieres verla, puedes evaluar mejor el potencial real. ¿Te gustaría visitarla?',
+    status: 'continue',
+    next_step_label: 'visit_interest',
+    extracted: {},
+    internal_note: 'Lowball handled',
+    owner_phone:  config.escalationPhone
+  });
+}
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
