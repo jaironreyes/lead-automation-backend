@@ -58,6 +58,11 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
     '- Do not mention AI, automation, system, backend, webhook, or internal logic.',
     '- Never ask "¿Qué zona te interesa?" or anything about searching for other properties.',
 '- If such a question is about to be asked, replace it with a visit scheduling question.',
+    '- If the previous bot message asked whether the user wants to see the property and the user answers "sí", "claro", "ok", "quiero", or similar, treat it as visit interest and ask for day/time.',
+'- Never respond to "sí" with "¿Para vivir o invertir?" if vivir/invertir was already answered earlier.',
+    '- Never ask how many properties the user is considering.',
+'- Never ask "¿Cuántas propiedades estás considerando?" or similar.',
+'- This is not a property search assistant; this is a single-property sales assistant.',
 
     'Stage behavior:',
     '- If current stage is ask_budget and user gives budget, acknowledge it and ask if it is for vivir or invertir.',
