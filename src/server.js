@@ -138,24 +138,13 @@ app.post('/webhooks/manychat', async (req, res) => {
           owner_phone: config.escalationPhone
         });
       }
-
-      return res.json({
-        ok: true,
-        reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
-        status: 'handoff',
-        next_step_label: 'handoff_human',
-        extracted: {},
-        internal_note: 'Handoff handled',
-        owner_phone: config.escalationPhone
-      });
-    }
-    if (
-  msg === 'si' ||
-  msg === 'sí' ||
-  msg === 'esta bien' ||
-  msg === 'está bien' ||
-  msg.includes('para ver dónde') ||
-  msg.includes('para ver donde')
+     if (
+      msg === 'si' ||
+      msg === 'sí' ||
+      msg === 'esta bien' ||
+      msg === 'está bien' ||
+      msg.includes('para ver dónde') ||
+      msg.includes('para ver donde')
 ) {
   return res.json({
     ok: true,
@@ -167,6 +156,17 @@ app.post('/webhooks/manychat', async (req, res) => {
     owner_phone: config.escalationPhone
   });
 }
+      return res.json({
+        ok: true,
+        reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
+        status: 'handoff',
+        next_step_label: 'handoff_human',
+        extracted: {},
+        internal_note: 'Handoff handled',
+        owner_phone: config.escalationPhone
+      });
+    }
+  
     // 2. PRICE / NEGOTIATION HANDLERS
     const isMinimumAsk =
       userMsg.includes('lo minimo') ||
