@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { config } from './config.js';
 import { buildSystemPrompt } from './prompt.js';
 import { responseJsonSchema } from './schemas.js';
-import { buildConversationInput, buildHandoffMessage, inboundSchema } from './leadRouter.js';
+import { buildConversationInput, inboundSchema } from './leadRouter.js';
 
 const app = express();
 const openai = new OpenAI({ apiKey: config.openAiApiKey });
@@ -18,14 +18,9 @@ function detectNextStage(payload, aiNextStep) {
   const msg = String(payload.last_user_message || '').toLowerCase();
   const stage = String(payload.lead_stage || '').toLowerCase();
 
-  const hasBudget =
-    /\d/.test(msg) ||
-    msg.includes('millon') ||
-    msg.includes('millón') ||
-    msg.includes('millones');
-
   const hasIntent =
     msg.includes('vivir') ||
+    msg.includes('vivienda') ||
     msg.includes('invertir') ||
     msg.includes('inversion') ||
     msg.includes('inversión');
@@ -35,8 +30,8 @@ function detectNextStage(payload, aiNextStep) {
     msg.includes('visita') ||
     msg.includes('interesa') ||
     msg.includes('quiero') ||
-    msg.includes('si') ||
-    msg.includes('sí');
+    msg.includes('sí') ||
+    msg.includes('si');
 
   const givesTime =
     msg.includes('hoy') ||
@@ -50,281 +45,272 @@ function detectNextStage(payload, aiNextStep) {
     msg.includes('sábado') ||
     msg.includes('sabado') ||
     msg.includes('domingo') ||
-    /\d{1,2}(:\d{2})?\s?(am|pm)?/.test(msg);
+    msg.includes('en la mañana') ||
+    msg.includes('en la tarde') ||
+    msg.includes('en la noche') ||
+    /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(msg);
 
   if (payload.lead_type !== 'buyer') return aiNextStep;
 
-  if (givesTime && stage === 'schedule_visit') return 'handoff_human';
+  if (givesTime) return 'handoff_human';
   if (wantsVisit && stage === 'visit_interest') return 'schedule_visit';
   if (hasIntent) return 'visit_interest';
-  if (hasBudget) return 'ask_intent';
 
-  return aiNextStep || stage || 'ask_budget';
+  return aiNextStep || stage || 'ask_intent';
 }
 
 app.post('/webhooks/manychat', async (req, res) => {
   try {
     const payload = inboundSchema.parse(req.body);
 
-if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
+    if (payload.secret !== config.webhookSecret) {
+      return res.status(401).json({ ok: false, error: 'Invalid secret.' });
+    }
 
-  const msg = String(payload.last_user_message || '').toLowerCase();
+    const userMsg = String(payload.last_user_message || '').toLowerCase();
 
-const hasPhoneNumber = /\b(809|829|849)[-\s]?\d{3}[-\s]?\d{4}\b/.test(msg);
+    // 1. HANDOFF LOCK
+    if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
+      const msg = userMsg;
 
-// 1. If user sends phone
-if (hasPhoneNumber) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 🔥 Ya tengo tu WhatsApp.\n\nTe escribo por ahí con la ubicación y los detalles de la visita.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'WhatsApp number captured',
-    owner_phone: config.escalationPhone
-  });
-}
-if (msg.includes('ya te lo di')) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 🔥 Ya lo tengo.\n\nTe escribo ahora con la ubicación y los detalles.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'User confirmed phone previously',
-    owner_phone: config.escalationPhone
-  });
-}
-if (msg.includes('gracias')) {
-  return res.json({
-    ok: true,
-    reply_text: 'A la orden 👍',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Thanks handled after handoff',
-    owner_phone: config.escalationPhone
-  });
-}
+      const hasPhoneNumber = /\b(809|829|849)[-\s]?\d{3}[-\s]?\d{4}\b/.test(msg);
 
-if (msg.includes('whatsapp') && 
-    (msg.includes('mejor') || msg.includes('por whatsapp'))) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 entonces seguimos por WhatsApp.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'WhatsApp preference handled',
-    owner_phone: config.escalationPhone
-  });
-}
-  // 2. Default reply
-let reply = 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.';
+      if (hasPhoneNumber) {
+        return res.json({
+          ok: true,
+          reply_text: 'Perfecto 🔥 Ya tengo tu WhatsApp.\n\nTe escribo por ahí con la ubicación y los detalles de la visita.',
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'WhatsApp number captured',
+          owner_phone: config.escalationPhone
+        });
+      }
 
-// 3. If user says no WhatsApp
-if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
-  reply = 'No hay problema 👍 Podemos seguir por aquí mismo.\n\nTe paso la ubicación y coordinamos todo por este DM.';
-}
+      if (
+        msg.includes('ya te lo di') ||
+        msg.includes('ya te lo mande') ||
+        msg.includes('ya te lo envié')
+      ) {
+        return res.json({
+          ok: true,
+          reply_text: 'Perfecto 🔥 Ya lo tengo.\n\nTe escribo ahora con la ubicación y los detalles.',
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'User confirmed phone previously',
+          owner_phone: config.escalationPhone
+        });
+      }
 
-return res.json({
-  ok: true,
-  reply_text: reply,
-  status: 'handoff',
-  next_step_label: 'handoff_human',
-  extracted: {},
-  internal_note: 'Handoff handled',
-  owner_phone: config.escalationPhone
-});
-  
-if (
-  msg.includes('whatsapp') &&
-  (msg.includes('tienes') || msg.includes('tiene') || msg.includes('mi'))
-) {
-  reply = 'No, pero si quieres dármelo está bien 👍\n\nO te paso la ubicación por aquí mismo y coordinamos la visita por este DM.';
-}
-  if (msg.includes('dónde') || msg.includes('ubicacion') || msg.includes('ubicación')) {
-    reply = 'Claro 👍 Ahora te paso la ubicación exacta por aquí mismo y coordinamos la visita.';
-  }
-if (
-  msg.includes('no') &&
-  (msg.includes('ahora') || msg.includes('más adelante') || msg.includes('mas adelante'))
-) {
-  forcedReply = 'Perfecto 👍 Cuando estés listo me escribes y coordinamos.\n\nSi quieres, puedo enviarte más fotos o detalles mientras tanto.';
-  forcedNextStep = 'nurture';
-}
-  
-  return res.json({
-    ok: true,
-    reply_text: reply,
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Handoff follow-up handled',
-    owner_phone: config.escalationPhone
-  });
-}
-  const userMsg = String(payload.last_user_message || '').toLowerCase();
-    const hasVisitTime =
-  userMsg.includes('hoy') ||
-  userMsg.includes('mañana') ||
-  userMsg.includes('lunes') ||
-  userMsg.includes('martes') ||
-  userMsg.includes('miércoles') ||
-  userMsg.includes('miercoles') ||
-  userMsg.includes('jueves') ||
-  userMsg.includes('viernes') ||
-  userMsg.includes('sábado') ||
-  userMsg.includes('sabado') ||
-  userMsg.includes('domingo') ||
-  userMsg.includes('en la mañana') ||
-  userMsg.includes('en la tarde') ||
-  userMsg.includes('en la noche') ||
-  /\b\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
+      if (msg.includes('gracias')) {
+        return res.json({
+          ok: true,
+          reply_text: 'A la orden 👍',
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'Thanks handled after handoff',
+          owner_phone: config.escalationPhone
+        });
+      }
 
-const alreadyAnswered =
-  userMsg.includes('ya te respondi') ||
-  userMsg.includes('ya te respondí') ||
-  userMsg.includes('ya te dije');
+      if (msg.includes('whatsapp') && msg.includes('mejor')) {
+        return res.json({
+          ok: true,
+          reply_text: 'Perfecto 👍 entonces seguimos por WhatsApp.',
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'WhatsApp preference handled',
+          owner_phone: config.escalationPhone
+        });
+      }
 
-if (hasVisitTime) {
-  return res.json({
-    ok: true,
-    reply_text: `Perfecto 🔥 Queda anotado para ${payload.last_user_message}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Visit time captured directly',
-    owner_phone: config.escalationPhone
-  });
-}
+      if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
+        return res.json({
+          ok: true,
+          reply_text: 'No hay problema 👍 Podemos seguir por aquí mismo.\n\nTe paso la ubicación y coordinamos todo por este DM.',
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'No WhatsApp handled',
+          owner_phone: config.escalationPhone
+        });
+      }
 
-if (alreadyAnswered) {
-  return res.json({
-    ok: true,
-    reply_text: 'Tienes razón 👍 Ya tengo tu respuesta.\n\nTe escribo con la ubicación y los detalles de la visita.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'User said they already answered',
-    owner_phone: config.escalationPhone
-  });
-}
-const isVisitAcceptance =
-  userMsg === 'si' ||
-  userMsg === 'sí' ||
-  userMsg === 'ok' ||
-  userMsg === 'dale' ||
-  userMsg === 'perfecto' ||
-  userMsg === 'esta bien' ||
-  userMsg === 'está bien';
+      return res.json({
+        ok: true,
+        reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
+        status: 'handoff',
+        next_step_label: 'handoff_human',
+        extracted: {},
+        internal_note: 'Handoff handled',
+        owner_phone: config.escalationPhone
+      });
+    }
 
-if (isVisitAcceptance) {
-  return res.json({
-    ok: true,
-    reply_text: '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?',
-    status: 'continue',
-    next_step_label: 'schedule_visit',
-    extracted: {},
-    internal_note: 'Visit acceptance detected',
-    owner_phone: config.escalationPhone
-  });
-}
-const softCloseOnly =
-  userMsg.includes('gracias') ||
-  userMsg.includes('ok');
+    // 2. PRICE / NEGOTIATION HANDLERS
+    const isMinimumAsk =
+      userMsg.includes('lo minimo') ||
+      userMsg.includes('mínimo') ||
+      userMsg.includes('minimo') ||
+      userMsg.includes('lo menos') ||
+      userMsg.includes('precio final');
 
-const hesitationStage =
-  String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
-
-if (softCloseOnly && hesitationStage) {
-  const lastBotReply = String(payload.last_bot_reply || '').toLowerCase();
-
-  if (lastBotReply.includes('aquí estoy si necesitas más información')) {
-    return res.json({
-      ok: true,
-      reply_text: '', // 🚫 no reply = prevents duplicate
-      status: 'silent',
-      next_step_label: 'nurture',
-      extracted: {},
-      internal_note: 'Duplicate soft close prevented',
-      owner_phone: config.escalationPhone
-    });
-  }
-
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
-    status: 'continue',
-    next_step_label: 'nurture',
-    extracted: {},
-    internal_note: 'Soft close handled',
-    owner_phone: config.escalationPhone
-  });
-} 
-const isMinimumAsk =
-  userMsg.includes('lo minimo') ||
-  userMsg.includes('mínimo') ||
-  userMsg.includes('minimo') ||
-  userMsg.includes('lo menos') ||
-  userMsg.includes('precio final');
     if (isMinimumAsk) {
-  return res.json({
-    ok: true,
-    reply_text: 'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\nLo ideal es que la veas primero y así evalúas si realmente te conviene. ¿Te gustaría visitarla?',
-    status: 'continue',
-    next_step_label: 'visit_interest',
-    extracted: {},
-    internal_note: 'Minimum price negotiation handled',
-    owner_phone: config.escalationPhone
-  });
-}
-const priceNumber = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
+      return res.json({
+        ok: true,
+        reply_text: 'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\nLo ideal es que la veas primero y así evalúas si realmente te conviene. ¿Te gustaría visitarla?',
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Minimum price negotiation handled',
+        owner_phone: config.escalationPhone
+      });
+    }
 
-const mentionsPrice =
-  userMsg.includes('millones') ||
-  userMsg.includes('millon') ||
-  userMsg.includes('millón') ||
-  userMsg.includes('la dejan') ||
-  userMsg.includes('lo dejan') ||
-  userMsg.includes('cogen') ||
-userMsg.includes('aceptan') ||
-   /\ben\s*\d/.test(userMsg) ||
-  userMsg.includes('te doy') ||
-  userMsg.includes('ofrezco');
-const isNearOffer =
-  mentionsPrice &&
-  priceNumber &&
-  priceNumber >= 4.0 &&
-  priceNumber < 4.5;
+    const priceNumber = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
 
-if (isNearOffer) {
-  return res.json({
-    ok: true,
-    reply_text: 'Estás bastante cerca 👍\n\nLo ideal es que la veas en persona primero y, si realmente te interesa, se puede conversar con una propuesta seria. ¿Te gustaría coordinar una visita?',
-    status: 'continue',
-    next_step_label: 'visit_interest',
-    extracted: {},
-    internal_note: 'Near offer handled',
-    owner_phone: config.escalationPhone
-  });
-}
-const isLowball =
-  mentionsPrice &&
-  priceNumber &&
-  priceNumber < 4.0;
+    const mentionsPrice =
+      userMsg.includes('millones') ||
+      userMsg.includes('millon') ||
+      userMsg.includes('millón') ||
+      userMsg.includes('la dejan') ||
+      userMsg.includes('lo dejan') ||
+      userMsg.includes('cogen') ||
+      userMsg.includes('aceptan') ||
+      /\ben\s*\d/.test(userMsg) ||
+      userMsg.includes('te doy') ||
+      userMsg.includes('ofrezco');
 
-if (isLowball) {
-  return res.json({
-    ok: true,
-    reply_text: 'Entiendo 👍 Pero por ese rango se queda fuera del valor actual de la propiedad.\n\nSi quieres verla, puedes evaluar mejor el potencial real. ¿Te gustaría visitarla?',
-    status: 'continue',
-    next_step_label: 'visit_interest',
-    extracted: {},
-    internal_note: 'Lowball handled',
-    owner_phone:  config.escalationPhone
-  });
-}
+    const isNearOffer =
+      mentionsPrice &&
+      priceNumber &&
+      priceNumber >= 4.0 &&
+      priceNumber < 4.5;
+
+    if (isNearOffer) {
+      return res.json({
+        ok: true,
+        reply_text: 'Estás bastante cerca 👍\n\nLo ideal es que la veas en persona primero y, si realmente te interesa, se puede conversar con una propuesta seria. ¿Te gustaría coordinar una visita?',
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Near offer handled',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    const isLowball =
+      mentionsPrice &&
+      priceNumber &&
+      priceNumber < 4.0;
+
+    if (isLowball) {
+      return res.json({
+        ok: true,
+        reply_text: 'Entiendo 👍 Pero por ese rango se queda fuera del valor actual de la propiedad.\n\nSi quieres verla, puedes evaluar mejor el potencial real. ¿Te gustaría visitarla?',
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Lowball handled',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    // 3. VISIT TIME / ACCEPTANCE
+    const hasVisitTime =
+      userMsg.includes('hoy') ||
+      userMsg.includes('mañana') ||
+      userMsg.includes('lunes') ||
+      userMsg.includes('martes') ||
+      userMsg.includes('miércoles') ||
+      userMsg.includes('miercoles') ||
+      userMsg.includes('jueves') ||
+      userMsg.includes('viernes') ||
+      userMsg.includes('sábado') ||
+      userMsg.includes('sabado') ||
+      userMsg.includes('domingo') ||
+      userMsg.includes('en la mañana') ||
+      userMsg.includes('en la tarde') ||
+      userMsg.includes('en la noche') ||
+      /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
+
+    if (hasVisitTime) {
+      return res.json({
+        ok: true,
+        reply_text: `Perfecto 🔥 Queda anotado para ${payload.last_user_message}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
+        status: 'handoff',
+        next_step_label: 'handoff_human',
+        extracted: {},
+        internal_note: 'Visit time captured directly',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    const alreadyAnswered =
+      userMsg.includes('ya te respondi') ||
+      userMsg.includes('ya te respondí') ||
+      userMsg.includes('ya te dije');
+
+    if (alreadyAnswered) {
+      return res.json({
+        ok: true,
+        reply_text: 'Tienes razón 👍 Ya tengo tu respuesta.\n\nTe escribo con la ubicación y los detalles de la visita.',
+        status: 'handoff',
+        next_step_label: 'handoff_human',
+        extracted: {},
+        internal_note: 'User said they already answered',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    const isVisitAcceptance =
+      userMsg === 'si' ||
+      userMsg === 'sí' ||
+      userMsg === 'dale' ||
+      userMsg === 'perfecto' ||
+      userMsg === 'esta bien' ||
+      userMsg === 'está bien';
+
+    if (isVisitAcceptance) {
+      return res.json({
+        ok: true,
+        reply_text: '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?',
+        status: 'continue',
+        next_step_label: 'schedule_visit',
+        extracted: {},
+        internal_note: 'Visit acceptance detected',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    // 4. SOFT CLOSE
+    const softCloseOnly =
+      userMsg.includes('gracias') ||
+      userMsg.includes('ahora no') ||
+      userMsg.includes('más adelante') ||
+      userMsg.includes('mas adelante') ||
+      userMsg.includes('quizás después') ||
+      userMsg.includes('quizas despues');
+
+    const hesitationStage =
+      String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
+
+    if (softCloseOnly && hesitationStage) {
+      return res.json({
+        ok: true,
+        reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
+        status: 'continue',
+        next_step_label: 'nurture',
+        extracted: {},
+        internal_note: 'Soft close handled',
+        owner_phone: config.escalationPhone
+      });
+    }
+
+    // 5. AI RESPONSE
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
@@ -354,63 +340,55 @@ if (isLowball) {
     });
 
     const rawText = aiResponse.output_text?.trim();
-if (!rawText) {
-  throw new Error('No model output_text returned.');
-}
 
-// ✅ FIRST define parsed
-const parsed = JSON.parse(rawText);
+    if (!rawText) {
+      throw new Error('No model output_text returned.');
+    }
 
-// (if you have detectNextStage, keep it here)
-const nextStep = detectNextStage(payload, parsed.next_step_label);
+    const parsed = JSON.parse(rawText);
+    const nextStep = detectNextStage(payload, parsed.next_step_label);
 
-// ✅ THEN use parsed
-let forcedReply = parsed.reply_text;
-let forcedNextStep = nextStep;
+    let forcedReply = parsed.reply_text;
+    let forcedNextStep = nextStep;
 
-// your logic continues ↓
-const latestMsg = String(payload.last_user_message || '').toLowerCase();
+    const badPatterns = [
+      'cuántas propiedades',
+      'cuantas propiedades',
+      'qué zona',
+      'que zona',
+      'dónde buscas',
+      'donde buscas',
+      'otras propiedades',
+      'más opciones',
+      'mas opciones'
+    ];
 
-// Block bad AI questions
-const badPatterns = [
-  'cuántas propiedades',
-  'cuantas propiedades',
-  'qué zona',
-  'que zona',
-  'dónde buscas',
-  'donde buscas',
-  'otras propiedades',
-  'más opciones',
-  'mas opciones'
-];
+    if (badPatterns.some((p) => forcedReply.toLowerCase().includes(p))) {
+      forcedReply = 'Perfecto 👌 ¿Te gustaría coordinar una visita para verla en persona?';
+      forcedNextStep = 'visit_interest';
+    }
 
-if (badPatterns.some(p => forcedReply.toLowerCase().includes(p))) {
-  forcedReply = 'Perfecto 👌 ¿Te gustaría coordinar una visita para verla en persona?';
-  forcedNextStep = 'visit_interest';
-}
+    const alreadySaidIntent =
+      userMsg.includes('vivir') ||
+      userMsg.includes('vivienda') ||
+      userMsg.includes('invertir') ||
+      userMsg.includes('inversion') ||
+      userMsg.includes('inversión');
 
-// Prevent repeating vivir/invertir after user already answered intent
-const alreadySaidIntent =
-  latestMsg.includes('vivir') ||
-  latestMsg.includes('vivienda') ||
-  latestMsg.includes('invertir') ||
-  latestMsg.includes('inversion') ||
-  latestMsg.includes('inversión');
+    if (alreadySaidIntent && forcedReply.toLowerCase().includes('vivir')) {
+      forcedReply = 'Perfecto 👌 ¿Te gustaría venir a verla en persona?';
+      forcedNextStep = 'visit_interest';
+    }
 
-if (alreadySaidIntent && forcedReply.toLowerCase().includes('vivir')) {
-  forcedReply = 'Perfecto 👌 ¿Te gustaría venir a verla en persona?';
-  forcedNextStep = 'visit_interest';
-}
-
-const finalReply =
-  parsed.status === 'handoff' || forcedNextStep === 'handoff_human'
-    ? buildHandoffMessage(payload.lead_type)
-    : forcedReply;
+    const finalReply =
+      parsed.status === 'handoff' || forcedNextStep === 'handoff_human'
+        ? `Perfecto 🔥 Queda anotado para ${payload.last_user_message}.\n\nTe escribo con la ubicación y los detalles de la visita.`
+        : forcedReply;
 
     return res.json({
       ok: true,
       reply_text: finalReply,
-      status: nextStep === 'handoff_human' ? 'handoff' : parsed.status,
+      status: forcedNextStep === 'handoff_human' ? 'handoff' : parsed.status,
       next_step_label: forcedNextStep,
       extracted: parsed.extracted,
       internal_note: parsed.internal_note,
