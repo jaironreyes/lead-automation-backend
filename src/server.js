@@ -165,7 +165,23 @@ const mentionsPrice =
    /\ben\s*\d/.test(userMsg) ||
   userMsg.includes('te doy') ||
   userMsg.includes('ofrezco');
+const isNearOffer =
+  mentionsPrice &&
+  priceNumber &&
+  priceNumber >= 4.0 &&
+  priceNumber < 4.5;
 
+if (isNearOffer) {
+  return res.json({
+    ok: true,
+    reply_text: 'Estás bastante cerca 👍\n\nLo ideal es que la veas en persona primero y, si realmente te interesa, se puede conversar con una propuesta seria. ¿Te gustaría coordinar una visita?',
+    status: 'continue',
+    next_step_label: 'visit_interest',
+    extracted: {},
+    internal_note: 'Near offer handled',
+    owner_phone: config.escalationPhone
+  });
+}
 const isLowball =
   mentionsPrice &&
   priceNumber &&
