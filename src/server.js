@@ -66,10 +66,30 @@ app.post('/webhooks/manychat', async (req, res) => {
   try {
     const payload = inboundSchema.parse(req.body);
 
-    if (payload.secret !== config.webhookSecret) {
-      return res.status(401).json({ ok: false, error: 'Invalid secret.' });
-    }
+if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
 
+  const msg = String(payload.last_user_message || '').toLowerCase();
+
+  let reply = 'Perfecto 👍 Seguimos por aquí mismo.\n\nTe paso la ubicación y coordinamos la visita por este DM.';
+
+  if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
+    reply = 'No hay problema 👍 Podemos seguir por aquí mismo en Instagram.\n\nTe paso la ubicación y coordinamos todo por este DM.';
+  }
+
+  if (msg.includes('dónde') || msg.includes('ubicacion') || msg.includes('ubicación')) {
+    reply = 'Claro 👍 Ahora te paso la ubicación exacta por aquí mismo y coordinamos la visita.';
+  }
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Handoff follow-up handled',
+    owner_phone: config.escalationPhone
+  });
+}
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
