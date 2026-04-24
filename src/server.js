@@ -396,13 +396,16 @@ if (asksForLocationAfterHandoff) {
     }
 
     // 4. SOFT CLOSE
-    const softCloseOnly =
-      userMsg.includes('gracias') ||
-      userMsg.includes('ahora no') ||
-      userMsg.includes('más adelante') ||
-      userMsg.includes('mas adelante') ||
-      userMsg.includes('quizás después') ||
-      userMsg.includes('quizas despues');
+    const wantsLater =
+      userMsg.includes('despues') ||
+      userMsg.includes('después') ||
+      userMsg.includes('mas tarde') ||
+      userMsg.includes('más tarde') ||
+      userMsg.includes('luego') ||
+      userMsg.includes('ahorita no') ||
+      userMsg.includes('no ahora') ||
+      userMsg.includes('quizas') ||
+      userMsg.includes('quizás');
 
     const hesitationStage =
       String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
