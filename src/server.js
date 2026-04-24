@@ -101,6 +101,28 @@ if (
     owner_phone: config.escalationPhone
   });
 }
+  const userMsg = String(payload.last_user_message || '').toLowerCase();
+
+const softCloseOnly =
+  userMsg.includes('está bien') ||
+  userMsg.includes('esta bien') ||
+  userMsg.includes('ok') ||
+  userMsg.includes('gracias');
+
+const hesitationStage =
+  String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
+
+if (softCloseOnly && hesitationStage) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
+    status: 'continue',
+    next_step_label: 'nurture',
+    extracted: {},
+    internal_note: 'Soft close handled without scheduling',
+    owner_phone: config.escalationPhone
+  });
+}  
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
