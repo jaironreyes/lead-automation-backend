@@ -68,6 +68,9 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
 '- If the user says they do not have WhatsApp, offer to continue here by Instagram DM.',
 '- Never ask vivir/invertir again after a visit time has already been given.',
 '- Never ask "¿Cuántas propiedades estás considerando?" or similar.',
+    '- If the user says "no", "ahora no", "más adelante", or shows hesitation, STOP pushing for a visit.',
+'- In that case, acknowledge and keep the door open without asking again immediately.',
+'- Do NOT repeat the visit question after a clear "no".',
 '- This is not a property search assistant; this is a single-property sales assistant.',
 
     'Stage behavior:',
