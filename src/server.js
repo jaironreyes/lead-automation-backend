@@ -165,6 +165,51 @@ if (
   });
 }
   const userMsg = String(payload.last_user_message || '').toLowerCase();
+    const hasVisitTime =
+  userMsg.includes('hoy') ||
+  userMsg.includes('mañana') ||
+  userMsg.includes('lunes') ||
+  userMsg.includes('martes') ||
+  userMsg.includes('miércoles') ||
+  userMsg.includes('miercoles') ||
+  userMsg.includes('jueves') ||
+  userMsg.includes('viernes') ||
+  userMsg.includes('sábado') ||
+  userMsg.includes('sabado') ||
+  userMsg.includes('domingo') ||
+  userMsg.includes('en la mañana') ||
+  userMsg.includes('en la tarde') ||
+  userMsg.includes('en la noche') ||
+  /\b\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
+
+const alreadyAnswered =
+  userMsg.includes('ya te respondi') ||
+  userMsg.includes('ya te respondí') ||
+  userMsg.includes('ya te dije');
+
+if (hasVisitTime) {
+  return res.json({
+    ok: true,
+    reply_text: `Perfecto 🔥 Queda anotado para ${payload.last_user_message}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Visit time captured directly',
+    owner_phone: config.escalationPhone
+  });
+}
+
+if (alreadyAnswered) {
+  return res.json({
+    ok: true,
+    reply_text: 'Tienes razón 👍 Ya tengo tu respuesta.\n\nTe escribo con la ubicación y los detalles de la visita.',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'User said they already answered',
+    owner_phone: config.escalationPhone
+  });
+}
 const isVisitAcceptance =
   userMsg === 'si' ||
   userMsg === 'sí' ||
