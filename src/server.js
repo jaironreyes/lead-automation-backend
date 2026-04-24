@@ -410,7 +410,7 @@ if (asksForLocationAfterHandoff) {
     const hesitationStage =
       String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
 
-    if (softCloseOnly && hesitationStage) {
+    if (wantsLater && hesitationStage) {
       return res.json({
         ok: true,
         reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
