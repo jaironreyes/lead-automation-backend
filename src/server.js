@@ -103,19 +103,52 @@ app.post('/webhooks/manychat', async (req, res) => {
       throw new Error('No model output_text returned.');
     }
 
-    const parsed = JSON.parse(rawText);
-    const nextStep = detectNextStage(payload, parsed.next_step_label);
+let forcedReply = parsed.reply_text;
+let forcedNextStep = nextStep;
 
-    const finalReply =
-      parsed.status === 'handoff' || nextStep === 'handoff_human'
-        ? buildHandoffMessage(payload.lead_type)
-        : parsed.reply_text;
+const latestMsg = String(payload.last_user_message || '').toLowerCase();
+
+// Block bad AI questions
+const badPatterns = [
+  'cuántas propiedades',
+  'cuantas propiedades',
+  'qué zona',
+  'que zona',
+  'dónde buscas',
+  'donde buscas',
+  'otras propiedades',
+  'más opciones',
+  'mas opciones'
+];
+
+if (badPatterns.some((p) => forcedReply.toLowerCase().includes(p))) {
+  forcedReply = 'Perfecto 👌 ¿Te gustaría coordinar una visita para verla en persona?';
+  forcedNextStep = 'visit_interest';
+}
+
+// Prevent repeating vivir/invertir after user already answered intent
+const alreadySaidIntent =
+  latestMsg.includes('vivir') ||
+  latestMsg.includes('vivienda') ||
+  latestMsg.includes('invertir') ||
+  latestMsg.includes('inversion') ||
+  latestMsg.includes('inversión');
+
+if (alreadySaidIntent && forcedReply.toLowerCase().includes('vivir')) {
+  forcedReply = 'Perfecto 👌 ¿Te gustaría venir a verla en persona?';
+  forcedNextStep = 'visit_interest';
+}
+
+const finalReply =
+  parsed.status === 'handoff' || forcedNextStep === 'handoff_human'
+    ? buildHandoffMessage(payload.lead_type)
+    : forcedReply;
 
     return res.json({
       ok: true,
       reply_text: finalReply,
       status: nextStep === 'handoff_human' ? 'handoff' : parsed.status,
-      next_step_label: nextStep,
+      next_step_label: forcedNextStep,
       extracted: parsed.extracted,
       internal_note: parsed.internal_note,
       owner_phone: config.escalationPhone
