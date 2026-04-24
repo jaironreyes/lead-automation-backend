@@ -103,7 +103,7 @@ const finalReply = parsed.status === 'handoff'
       ok: true,
       reply_text: finalReply,
       status: parsed.status,
-      next_step_label: parsed.next_step_label,
+      next_step_label: forcedNextStep,,
       extracted: parsed.extracted,
       internal_note: parsed.internal_note,
       owner_phone: config.escalationPhone
