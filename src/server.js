@@ -218,6 +218,33 @@ app.post('/webhooks/manychat', async (req, res) => {
   });
 }
 }
+   const normalizedHandoffMsg = msg
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[¿?¡!.,]/g, "");
+
+const asksForLocationAfterHandoff =
+  normalizedHandoffMsg.includes('ubicacion') ||
+  normalizedHandoffMsg.includes('mandame') ||
+  normalizedHandoffMsg.includes('mandamela') ||
+  normalizedHandoffMsg.includes('mandala') ||
+  normalizedHandoffMsg.includes('pasamela') ||
+  normalizedHandoffMsg.includes('enviamela') ||
+  normalizedHandoffMsg.includes('donde esta') ||
+  normalizedHandoffMsg.includes('donde queda') ||
+  normalizedHandoffMsg.includes('direccion');
+
+if (asksForLocationAfterHandoff) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\nCuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Exact location sent after handoff',
+    owner_phone: config.escalationPhone
+  });
+}   
         return res.json({
         ok: true,
         reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
