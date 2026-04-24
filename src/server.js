@@ -23,7 +23,10 @@ app.post('/webhooks/manychat', async (req, res) => {
     }
 
     const input = buildConversationInput(payload);
-    const systemPrompt = buildSystemPrompt({ leadType: payload.lead_type });
+    const systemPrompt = buildSystemPrompt({
+  leadType: payload.lead_type,
+  lead_stage: payload.lead_stage
+});
 
     const aiResponse = await openai.responses.create({
       model: config.openAiModel,
