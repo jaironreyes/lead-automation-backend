@@ -113,16 +113,30 @@ const hesitationStage =
   String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
 
 if (softCloseOnly && hesitationStage) {
+  const lastBotReply = String(payload.last_bot_reply || '').toLowerCase();
+
+  if (lastBotReply.includes('aquí estoy si necesitas más información')) {
+    return res.json({
+      ok: true,
+      reply_text: '', // 🚫 no reply = prevents duplicate
+      status: 'silent',
+      next_step_label: 'nurture',
+      extracted: {},
+      internal_note: 'Duplicate soft close prevented',
+      owner_phone: config.escalationPhone
+    });
+  }
+
   return res.json({
     ok: true,
     reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
     status: 'continue',
     next_step_label: 'nurture',
     extracted: {},
-    internal_note: 'Soft close handled without scheduling',
+    internal_note: 'Soft close handled',
     owner_phone: config.escalationPhone
   });
-}  
+} 
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
