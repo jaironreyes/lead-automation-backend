@@ -69,7 +69,50 @@ app.post('/webhooks/manychat', async (req, res) => {
 if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
 
   const msg = String(payload.last_user_message || '').toLowerCase();
+const msg = String(payload.last_user_message || '').toLowerCase();
 
+const hasPhoneNumber = /\b(809|829|849)[-\s]?\d{3}[-\s]?\d{4}\b/.test(msg);
+
+// 1. If user sends phone
+if (hasPhoneNumber) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 🔥 Ya tengo tu WhatsApp.\n\nTe escribo por ahí con la ubicación y los detalles de la visita.',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'WhatsApp number captured',
+    owner_phone: config.escalationPhone
+  });
+}
+if (msg.includes('ya te lo di')) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 🔥 Ya lo tengo.\n\nTe escribo ahora con la ubicación y los detalles.',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'User confirmed phone previously',
+    owner_phone: config.escalationPhone
+  });
+}
+// 2. Default reply
+let reply = 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.';
+
+// 3. If user says no WhatsApp
+if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
+  reply = 'No hay problema 👍 Podemos seguir por aquí mismo.\n\nTe paso la ubicación y coordinamos todo por este DM.';
+}
+
+return res.json({
+  ok: true,
+  reply_text: reply,
+  status: 'handoff',
+  next_step_label: 'handoff_human',
+  extracted: {},
+  internal_note: 'Handoff handled',
+  owner_phone: config.escalationPhone
+});
   let reply = 'Perfecto 👍 Seguimos por aquí mismo.\n\nTe paso la ubicación y coordinamos la visita por este DM.';
 
   if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
@@ -91,6 +134,7 @@ if (
   forcedReply = 'Perfecto 👍 Cuando estés listo me escribes y coordinamos.\n\nSi quieres, puedo enviarte más fotos o detalles mientras tanto.';
   forcedNextStep = 'nurture';
 }
+  
   return res.json({
     ok: true,
     reply_text: reply,
