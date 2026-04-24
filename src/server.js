@@ -149,7 +149,24 @@ app.post('/webhooks/manychat', async (req, res) => {
         owner_phone: config.escalationPhone
       });
     }
-
+    if (
+  msg === 'si' ||
+  msg === 'sí' ||
+  msg === 'esta bien' ||
+  msg === 'está bien' ||
+  msg.includes('para ver dónde') ||
+  msg.includes('para ver donde')
+) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\n[https://maps.app.goo.gl/NAB4CLb9d4xDSgvH7]',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Location confirmation handled',
+    owner_phone: config.escalationPhone
+  });
+}
     // 2. PRICE / NEGOTIATION HANDLERS
     const isMinimumAsk =
       userMsg.includes('lo minimo') ||
