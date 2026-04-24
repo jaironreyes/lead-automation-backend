@@ -79,7 +79,7 @@ if (payload.lead_type === 'buyer') {
     forcedReply = 'Perfecto 🔥 Ese presupuesto encaja. ¿La buscas para vivir o para invertir?';
   }
 
-  if (stage === 'ask_intent' && hasIntent) {
+  if (hasIntent) {
     forcedNextStep = 'visit_interest';
 
     if (msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión')) {
