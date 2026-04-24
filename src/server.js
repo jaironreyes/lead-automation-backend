@@ -317,16 +317,19 @@ app.post('/webhooks/manychat', async (req, res) => {
       /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
 
     if (hasVisitTime) {
-      const cleanMsg = normalizeSpanish(payload.last_user_message);
-      const finalTime = interpretTime(cleanMsg);
-        reply_text: `Perfecto 🔥 Queda anotado para ${finalTime}.`,
+    const cleanMsg = normalizeSpanish(payload.last_user_message);
+     const finalTime = interpretTime(cleanMsg);
+
+      return res.json({
+        ok: true,
+        reply_text: `Perfecto 🔥 Queda anotado para ${finalTime}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
         status: 'handoff',
         next_step_label: 'handoff_human',
         extracted: {},
         internal_note: 'Visit time captured directly',
         owner_phone: config.escalationPhone
-      });
-    }
+  });
+}
 
     const alreadyAnswered =
       userMsg.includes('ya te respondi') ||
