@@ -137,9 +137,22 @@ if (softCloseOnly && hesitationStage) {
     owner_phone: config.escalationPhone
   });
 } 
-    const isLowball =
-  userMsg.includes('millones') &&
-  parseFloat(userMsg.replace(/[^0-9.]/g, '')) < 4.0;
+const priceNumber = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
+
+const mentionsPrice =
+  userMsg.includes('millones') ||
+  userMsg.includes('millon') ||
+  userMsg.includes('millón') ||
+  userMsg.includes('la dejan') ||
+  userMsg.includes('lo dejan') ||
+   /\ben\s*\d/.test(userMsg) ||
+  userMsg.includes('te doy') ||
+  userMsg.includes('ofrezco');
+
+const isLowball =
+  mentionsPrice &&
+  priceNumber &&
+  priceNumber < 4.0;
 
 if (isLowball) {
   return res.json({
