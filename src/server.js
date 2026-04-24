@@ -102,12 +102,29 @@ if (
   });
 }
   const userMsg = String(payload.last_user_message || '').toLowerCase();
+const isVisitAcceptance =
+  userMsg === 'si' ||
+  userMsg === 'sí' ||
+  userMsg === 'ok' ||
+  userMsg === 'dale' ||
+  userMsg === 'perfecto' ||
+  userMsg === 'esta bien' ||
+  userMsg === 'está bien';
 
+if (isVisitAcceptance) {
+  return res.json({
+    ok: true,
+    reply_text: '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?',
+    status: 'continue',
+    next_step_label: 'schedule_visit',
+    extracted: {},
+    internal_note: 'Visit acceptance detected',
+    owner_phone: config.escalationPhone
+  });
+}
 const softCloseOnly =
-  userMsg.includes('está bien') ||
-  userMsg.includes('esta bien') ||
-  userMsg.includes('ok') ||
-  userMsg.includes('gracias');
+  userMsg.includes('gracias') ||
+  userMsg.includes('ok');
 
 const hesitationStage =
   String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
