@@ -392,7 +392,6 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
-    const userMsg = String(payload.last_user_message || '').toLowerCase();
     const normalizedMsg = userMsg
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // remove accents
