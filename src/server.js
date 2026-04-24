@@ -75,7 +75,12 @@ if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
   if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
     reply = 'No hay problema 👍 Podemos seguir por aquí mismo en Instagram.\n\nTe paso la ubicación y coordinamos todo por este DM.';
   }
-
+if (
+  msg.includes('whatsapp') &&
+  (msg.includes('tienes') || msg.includes('tiene') || msg.includes('mi'))
+) {
+  reply = 'No, pero si quieres dármelo está bien 👍\n\nO te paso la ubicación por aquí mismo y coordinamos la visita por este DM.';
+}
   if (msg.includes('dónde') || msg.includes('ubicacion') || msg.includes('ubicación')) {
     reply = 'Claro 👍 Ahora te paso la ubicación exacta por aquí mismo y coordinamos la visita.';
   }
