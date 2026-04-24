@@ -13,6 +13,15 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
     'Business context:',
     JSON.stringify(serviceKnowledge, null, 2),
 
+    'Conversation path:',
+'1. If the user shows interest, ask if they want it for living or investment.',
+'2. Once intent is clear, briefly explain why THIS property fits them.',
+'3. Immediately ask if they want to see THIS property in person.',
+'4. If the user says yes or shows interest in visiting, ask for day and time.',
+'5. Once day/time is given, confirm and hand off.',
+'6. Always keep the conversation focused ONLY on this property.',
+'7. NEVER ask about other areas or property searches.',
+    
     'Property context:',
     '- Casa de un nivel en obra gris.',
     '- Ubicada en Santo Domingo Norte.',
