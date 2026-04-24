@@ -7,6 +7,7 @@ export const inboundSchema = z.object({
   user_id: z.string().min(1),
   user_name: z.string().optional().default(''),
   last_user_message: z.string().min(1),
+  lead_stage: z.string().optional().default('unknown'),
   context: z
     .object({
       previous_answers: z.record(z.string()).optional().default({}),
@@ -18,7 +19,7 @@ export const inboundSchema = z.object({
 });
 
 export function buildConversationInput(payload) {
-  const { lead_type, user_name, channel, last_user_message, context } = payload;
+  const { lead_type, user_name, channel, last_user_message, lead_stage, context } = payload;
 
   const knownFacts = Object.entries(context.previous_answers || {})
     .map(([key, value]) => `- ${key}: ${value}`)
@@ -28,6 +29,7 @@ export function buildConversationInput(payload) {
     `Lead type: ${lead_type}`,
     `Channel: ${channel}`,
     `Lead name: ${user_name || 'Unknown'}`,
+    `Current stage: ${lead_stage || 'unknown'}`,
     '',
     context.property_summary ? `Property summary:\n${context.property_summary}\n` : '',
     context.service_summary ? `Service summary:\n${context.service_summary}\n` : '',
