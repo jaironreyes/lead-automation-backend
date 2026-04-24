@@ -95,7 +95,31 @@ if (msg.includes('ya te lo di')) {
     owner_phone: config.escalationPhone
   });
 }
-// 2. Default reply
+if (msg.includes('gracias')) {
+  return res.json({
+    ok: true,
+    reply_text: 'A la orden 👍',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Thanks handled after handoff',
+    owner_phone: config.escalationPhone
+  });
+}
+
+if (msg.includes('whatsapp') && 
+    (msg.includes('mejor') || msg.includes('por whatsapp'))) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 entonces seguimos por WhatsApp.',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'WhatsApp preference handled',
+    owner_phone: config.escalationPhone
+  });
+}
+  // 2. Default reply
 let reply = 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.';
 
 // 3. If user says no WhatsApp
@@ -218,6 +242,8 @@ const mentionsPrice =
   userMsg.includes('millón') ||
   userMsg.includes('la dejan') ||
   userMsg.includes('lo dejan') ||
+  userMsg.includes('cogen') ||
+userMsg.includes('aceptan') ||
    /\ben\s*\d/.test(userMsg) ||
   userMsg.includes('te doy') ||
   userMsg.includes('ofrezco');
