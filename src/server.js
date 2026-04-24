@@ -84,7 +84,13 @@ if (
   if (msg.includes('dónde') || msg.includes('ubicacion') || msg.includes('ubicación')) {
     reply = 'Claro 👍 Ahora te paso la ubicación exacta por aquí mismo y coordinamos la visita.';
   }
-
+if (
+  msg.includes('no') &&
+  (msg.includes('ahora') || msg.includes('más adelante') || msg.includes('mas adelante'))
+) {
+  forcedReply = 'Perfecto 👍 Cuando estés listo me escribes y coordinamos.\n\nSi quieres, puedo enviarte más fotos o detalles mientras tanto.';
+  forcedNextStep = 'nurture';
+}
   return res.json({
     ok: true,
     reply_text: reply,
