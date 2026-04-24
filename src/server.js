@@ -99,13 +99,21 @@ app.post('/webhooks/manychat', async (req, res) => {
     });
 
     const rawText = aiResponse.output_text?.trim();
-    if (!rawText) {
-      throw new Error('No model output_text returned.');
-    }
+if (!rawText) {
+  throw new Error('No model output_text returned.');
+}
 
+// ✅ FIRST define parsed
+const parsed = JSON.parse(rawText);
+
+// (if you have detectNextStage, keep it here)
+const nextStep = detectNextStage(payload, parsed.next_step_label);
+
+// ✅ THEN use parsed
 let forcedReply = parsed.reply_text;
 let forcedNextStep = nextStep;
 
+// your logic continues ↓
 const latestMsg = String(payload.last_user_message || '').toLowerCase();
 
 // Block bad AI questions
@@ -121,7 +129,7 @@ const badPatterns = [
   'mas opciones'
 ];
 
-if (badPatterns.some((p) => forcedReply.toLowerCase().includes(p))) {
+if (badPatterns.some(p => forcedReply.toLowerCase().includes(p))) {
   forcedReply = 'Perfecto 👌 ¿Te gustaría coordinar una visita para verla en persona?';
   forcedNextStep = 'visit_interest';
 }
