@@ -113,17 +113,6 @@ const parsed = JSON.parse(rawText);
 let forcedNextStep = parsed.next_step_label;
 let forcedReply = parsed.reply_text;
 
-const msg = String(payload.last_user_message || '').toLowerCase();
-const stage = String(payload.lead_stage || '').toLowerCase();
-
-const hasBudget =
-  /\d/.test(msg) || msg.includes('millon') || msg.includes('millón') || msg.includes('millones');
-
-const hasIntent =
-  msg.includes('vivir') || msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión');
-
-const wantsVisit =
-  msg.includes('ver') || msg.includes('visita') || msg.includes('interesa') || msg.includes('quiero') || msg.includes('si') || msg.includes('sí');
 
 if (payload.lead_type === 'buyer') {
   if ((stage === 'ask_budget' || stage === '' || stage === 'unknown') && hasBudget) {
