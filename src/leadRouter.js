@@ -38,9 +38,20 @@ export function buildConversationInput(payload) {
   ].join('\n');
 }
 
-export function buildHandoffMessage(leadType) {
+export function buildHandoffMessage(leadType, visitTime = '') {
   if (leadType === 'buyer') {
-    return 'Perfecto. Ya tengo lo principal. Te paso con la persona para enviarte opciones y coordinar el próximo paso.';
+    const cleanVisitTime = String(visitTime || '').trim();
+
+    if (cleanVisitTime) {
+      return `Perfecto 🔥 Queda anotado para ${cleanVisitTime}.
+
+Te escribo ahora por WhatsApp con la ubicación y los detalles de la visita.`;
+    }
+
+    return `Perfecto 🔥 Queda anotado.
+
+Te escribo ahora por WhatsApp con la ubicación y los detalles de la visita.`;
   }
+
   return 'Perfecto. Ya tengo lo principal. Te paso con la persona para explicarte cómo aplicaríamos esto contigo.';
 }
