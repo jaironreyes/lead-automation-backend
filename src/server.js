@@ -392,6 +392,33 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
+    const userMsg = String(payload.last_user_message || '').toLowerCase();
+    const normalizedMsg = userMsg
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents
+    .replace(/[¿?¡!.,]/g, ""); // remove punctuation
+    const asksForLocation =
+     normalizedMsg.includes('ubicacion') ||
+     normalizedMsg.includes('mandame la ubicacion') ||
+     normalizedMsg.includes('mandamela') ||
+     normalizedMsg.includes('mandala') ||
+     normalizedMsg.includes('pasamela') ||
+     normalizedMsg.includes('enviamela') ||
+     normalizedMsg.includes('donde esta') ||
+     normalizedMsg.includes('donde queda') ||
+     normalizedMsg.includes('direccion');
+
+if (asksForLocation) {
+  return res.json({
+    ok: true,
+    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\nCuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.',
+    status: 'continue',
+    next_step_label: 'visit_interest',
+    extracted: {},
+    internal_note: 'Location requested and sent',
+    owner_phone: config.escalationPhone
+  });
+}
     // 5. AI RESPONSE
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
