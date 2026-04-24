@@ -21,7 +21,59 @@ app.post('/webhooks/manychat', async (req, res) => {
     if (payload.secret !== config.webhookSecret) {
       return res.status(401).json({ ok: false, error: 'Invalid secret.' });
     }
+const msg = String(payload.last_user_message || '').toLowerCase();
+const stage = String(payload.lead_stage || '').toLowerCase();
 
+const hasBudget =
+  /\d/.test(msg) || msg.includes('millon') || msg.includes('millón') || msg.includes('millones');
+
+const hasIntent =
+  msg.includes('vivir') || msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión');
+
+const wantsVisit =
+  msg.includes('ver') || msg.includes('visita') || msg.includes('interesa') || msg.includes('quiero') || msg.includes('si') || msg.includes('sí');
+
+if (payload.lead_type === 'buyer') {
+  if (hasIntent) {
+    const isInvestor = msg.includes('invertir') || msg.includes('inversion') || msg.includes('inversión');
+
+    return res.json({
+      ok: true,
+      reply_text: isInvestor
+        ? 'Buenísimo 👌 Como inversión tiene potencial porque está en obra gris y puedes terminarla con estrategia. ¿Te gustaría verla en persona?'
+        : 'Perfecto 👌 Para vivir puede ser una buena opción porque la terminas a tu gusto. ¿Te gustaría verla en persona?',
+      status: 'continue',
+      next_step_label: 'visit_interest',
+      extracted: {},
+      internal_note: 'Forced intent logic',
+      owner_phone: config.escalationPhone
+    });
+  }
+
+  if (hasBudget) {
+    return res.json({
+      ok: true,
+      reply_text: 'Perfecto 🔥 Ese presupuesto encaja. ¿La buscas para vivir o para invertir?',
+      status: 'continue',
+      next_step_label: 'ask_intent',
+      extracted: {},
+      internal_note: 'Forced budget logic',
+      owner_phone: config.escalationPhone
+    });
+  }
+
+  if (stage === 'visit_interest' && wantsVisit) {
+    return res.json({
+      ok: true,
+      reply_text: 'Perfecto 🔥 ¿Qué día te queda mejor para coordinar la visita?',
+      status: 'continue',
+      next_step_label: 'schedule_visit',
+      extracted: {},
+      internal_note: 'Forced visit logic',
+      owner_phone: config.escalationPhone
+    });
+  }
+}
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
   leadType: payload.lead_type,
