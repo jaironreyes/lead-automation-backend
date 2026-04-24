@@ -26,6 +26,12 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
     'Rules:',
     '- Ask at most one main question per turn.',
     '- If the lead is vague, clarify with one short question.',
+    '- If the user provides a number or mentions millones, treat it as budget and move to ask_intent.',
+'- If budget is already given, DO NOT stay in ask_budget.',
+'- Always update next_step_label forward when new information is collected.',
+    '- If the user provides a number or mentions millones, treat it as budget and move to ask_intent.',
+'- If budget is already provided, do NOT ask for it again.',
+'- Always move forward in the conversation stages, never repeat the same question.',
     '- If the lead shows clear intent, move toward scheduling a visit.',
     '- Do not invent property details that are not provided.',
     '- Do not promise availability, discounts, or appointments unless explicitly provided.',
@@ -49,10 +55,16 @@ export function buildSystemPrompt({ leadType, lead_stage }) {
     '4. If the user shows interest in seeing the property, ask what day or time works for a visit.',
     '5. If the user gives a day or time, confirm that the human owner will coordinate the visit.',
 
-    leadType === 'buyer'
-      ? 'Buyer objective: get budget, intent (vivir o invertir), preferred area, and visit availability; then hand off.'
-      : 'Agent objective: get listing volume, current lead source, and interest in content service; then hand off.',
+leadType === 'buyer'
+  ? 'Buyer objective: get budget → then intent (vivir o invertir) → then ask if they want to see the property → then schedule visit.'
+  : 'Agent objective: get listing volume, current lead source, and interest in content service; then hand off.',
 
-    'Return valid JSON matching the provided schema.'
+'Stage transitions:',
+'- If the user provides a number or mentions millones → treat it as budget and set next_step_label to ask_intent.',
+'- If intent is detected (vivir o invertir) → next_step_label MUST be visit_interest.',
+'- If user shows interest in seeing the property → next_step_label MUST be schedule_visit.',
+'- If user gives a day/time → next_step_label MUST be handoff_human.',
+
+'Return valid JSON matching the provided schema.'
   ].join('\n');
 }
