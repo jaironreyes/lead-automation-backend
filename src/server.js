@@ -597,7 +597,7 @@ if (isVisitAcceptance) {
   });
 }
     
-const currentStage = String(payload.lead_stage || '').toLowerCase();
+const currentStage2 = String(payload.lead_stage || '').toLowerCase();
 
 const isInNurtureMode =
   currentStage === 'nurture' ||
