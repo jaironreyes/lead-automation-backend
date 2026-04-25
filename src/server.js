@@ -23,30 +23,23 @@ function normalizeForMatching(text) {
     .trim();
 }
 
-function replyJson(res, { reply, nextStep, note, intent, context }) {
-  const safeReply = avoidRepeat(reply);
-
-  if (!safeReply) {
-    return res.json({
-      ok: true,
-      reply_text: '',
-      status: 'silent',
-      next_step_label: 'none',
-      extracted: {},
-      internal_note: 'Duplicate reply blocked',
-      owner_phone: config.escalationPhone
-    });
-  }
-
+function replyJson(res, {
+  reply,
+  status = 'continue',
+  nextStep = 'info_requested',
+  note = '',
+  intent = '',
+  context = ''
+}) {
   return res.json({
     ok: true,
-    reply_text: safeReply,
-    status: 'continue',
+    reply_text: reply,
+    status,
     next_step_label: nextStep,
     extracted: {},
     internal_note: note,
     owner_phone: config.escalationPhone,
-    memory_updates: memory(intent, context, safeReply)
+    memory_updates: memory(intent, context, reply)
   });
 }
 
