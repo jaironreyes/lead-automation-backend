@@ -53,6 +53,14 @@ function normalizeSpanish(text) {
     .replace(/temprano/gi, 'en la mañana');
 }
 
+function avoidRepeat(replyText, lastBotReply) {
+  if (!replyText) return replyText;
+  if (lastBotReply && lastBotReply.trim() === replyText.trim()) {
+    return null; // block duplicate
+  }
+  return replyText;
+}
+
 function interpretTime(text) {
   const msg = normalizeForMatching(text);
 
@@ -118,8 +126,8 @@ app.post('/webhooks/manychat', async (req, res) => {
     const rawMsg = String(payload.last_user_message || '');
 const userMsg = rawMsg.toLowerCase();
 const normalizedMsg = normalizeForMatching(rawMsg);
-const rawTrim = rawMsg.trim().toLowerCase();
-
+const rawTrim = rawMsg.trim().toLowerCase();    
+    
 const isNoise =
   rawTrim === '?' ||
   rawTrim === '.' ||
