@@ -138,7 +138,7 @@ if (isNoise) {
     owner_phone: config.escalationPhone
   });
 }
-    const normalizedMsg = normalizeForMatching(rawMsg);
+    
     const currentStage = String(payload.lead_stage || '').toLowerCase();
     const lastIntent = String(payload.last_intent || '').toLowerCase();
 
