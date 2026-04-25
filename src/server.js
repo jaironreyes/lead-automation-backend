@@ -147,7 +147,19 @@ console.log('NORMALIZED MESSAGE:', normalizedMsg);
 const rawTrim = rawMsg.trim().toLowerCase(); 
 const currentStage = String(payload.lead_stage || '').toLowerCase();    
 const lastIntent = String(payload.last_intent || '').toLowerCase();    
-const lastBotReply = String(payload.last_bot_reply || '').trim();    
+const lastBotReply = String(payload.last_bot_reply || '').trim();
+// 🔥 RESET MEMORY WHEN USER CHANGES TOPIC
+if (
+  normalizedMsg.includes('titulo') ||
+  normalizedMsg.includes('tiene titulo') ||
+  normalizedMsg.includes('luz') ||
+  normalizedMsg.includes('agua') ||
+  normalizedMsg.includes('interesa') ||
+  normalizedMsg.includes('precio')
+) {
+  payload.last_intent = null;
+  payload.last_question_context = null;
+}
 
 const isNoise =
   rawTrim === '?' ||
