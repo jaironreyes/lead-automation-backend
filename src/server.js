@@ -115,6 +115,29 @@ app.post('/webhooks/manychat', async (req, res) => {
     const userMsg = String(payload.last_user_message || '').toLowerCase();
     const normalizedMsg = normalizeForMatching(userMsg);
     const lastIntent = String(payload.last_intent || '').toLowerCase();
+
+    const isGreetingOnly =
+  normalizedMsg === 'hola' ||
+  normalizedMsg === 'saludos' ||
+  normalizedMsg === 'buenas' ||
+  normalizedMsg === 'buen dia' ||
+  normalizedMsg === 'buenas tardes' ||
+  normalizedMsg === 'buenas noches';
+
+if (isGreetingOnly) {
+  const reply = '¡Saludos! 👋 Claro, dime qué te gustaría saber de la casa.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: 'info_requested',
+    extracted: {},
+    internal_note: 'Greeting reset handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('greeting', 'general', reply)
+  });
+}
     
     // HANDLE SINGLE "?" WITHOUT REPEATING
 if (userMsg.trim() === '?') {
