@@ -23,6 +23,33 @@ function normalizeForMatching(text) {
     .trim();
 }
 
+function replyJson(res, { reply, nextStep, note, intent, context }) {
+  const safeReply = avoidRepeat(reply);
+
+  if (!safeReply) {
+    return res.json({
+      ok: true,
+      reply_text: '',
+      status: 'silent',
+      next_step_label: 'none',
+      extracted: {},
+      internal_note: 'Duplicate reply blocked',
+      owner_phone: config.escalationPhone
+    });
+  }
+
+  return res.json({
+    ok: true,
+    reply_text: safeReply,
+    status: 'continue',
+    next_step_label: nextStep,
+    extracted: {},
+    internal_note: note,
+    owner_phone: config.escalationPhone,
+    memory_updates: memory(intent, context, safeReply)
+  });
+}
+
 function normalizeSpanish(text) {
   return String(text || '')
     .replace(/manana/gi, 'mañana')
