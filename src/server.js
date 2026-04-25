@@ -152,10 +152,7 @@ const isNoise =
   rawTrim === '.' ||
   rawTrim === '¿' ||
   rawTrim === '!' ||
-  rawTrim === '¡' ||
-  rawTrim === '👍' ||
-  rawTrim === 'ok' ||
-  rawTrim === 'dale';
+  rawTrim === '¡';
 
 if (isNoise) {
   return res.json({
@@ -166,7 +163,7 @@ if (isNoise) {
     extracted: {},
     internal_note: 'Noise ignored',
     owner_phone: config.escalationPhone,
-    memory_updates: memory(lastIntent, 'noise_ignored', '')
+    memory_updates: memory(lastIntent, 'noise', '')
   });
 }
     
