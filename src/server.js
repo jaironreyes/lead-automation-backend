@@ -302,7 +302,26 @@ const namePrefix = firstName ? `${firstName}, ` : '';
       });
     }
 
-    // 7. PRICE / OFFER HANDLING
+    // 7. PRICE INFO (SIMPLE QUESTION)
+const asksPrice =
+  normalizedMsg === 'precio' ||
+  normalizedMsg === 'cuanto' ||
+  normalizedMsg.includes('precio') ||
+  normalizedMsg.includes('cuanto cuesta') ||
+  normalizedMsg.includes('cuanto vale') ||
+  normalizedMsg.includes('en cuanto');
+
+if (asksPrice) {
+  return replyJson(res, {
+    reply: 'El precio de la casa es RD$4.5 millones.',
+    nextStep: 'info_provided',
+    note: 'Price info handled',
+    intent: 'price_info',
+    context: 'price'
+  });
+}
+    
+    // 8. PRICE / OFFER HANDLING
     const priceNumber = parseFloat(normalizedMsg.replace(/[^0-9.]/g, ''));
 
     const mentionsPrice =
@@ -363,7 +382,7 @@ const namePrefix = firstName ? `${firstName}, ` : '';
       });
     }
 
-    // 8. VISIT TIME
+    // 9. VISIT TIME
     const hasVisitTime =
       normalizedMsg.includes('hoy') ||
       normalizedMsg.includes('manana') ||
@@ -395,7 +414,7 @@ const namePrefix = firstName ? `${firstName}, ` : '';
       });
     }
 
-    // 9. VISIT ACCEPTANCE
+    // 10. VISIT ACCEPTANCE
     const isInNurtureMode =
       currentStage === 'nurture' ||
       lastIntent === 'soft_close';
@@ -420,7 +439,7 @@ const namePrefix = firstName ? `${firstName}, ` : '';
       });
     }
 
-    // 10. HANDOFF MODE FALLBACK
+    // 11. HANDOFF MODE FALLBACK
     if (currentStage === 'handoff_human') {
       return replyJson(res, {
         reply: 'Perfecto 👍 Cualquier detalle, seguimos por aquí.',
