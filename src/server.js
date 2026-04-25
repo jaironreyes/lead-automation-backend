@@ -580,7 +580,8 @@ const isVisitAcceptance =
     normalizedMsg === 'esta bien' ||
     normalizedMsg === 'bien'
   );
-{
+
+if (isVisitAcceptance) {
   const reply = '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?';
 
   return res.json({
