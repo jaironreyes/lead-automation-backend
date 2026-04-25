@@ -31,15 +31,29 @@ function replyJson(res, {
   intent = '',
   context = ''
 }) {
+  const safeReply = avoidRepeat(reply, lastBotReply);
+
+  if (!safeReply) {
+    return res.json({
+      ok: true,
+      reply_text: '',
+      status: 'silent',
+      next_step_label: 'none',
+      extracted: {},
+      internal_note: 'Duplicate reply blocked',
+      owner_phone: config.escalationPhone
+    });
+  }
+
   return res.json({
     ok: true,
-    reply_text: reply,
+    reply_text: safeReply,
     status,
     next_step_label: nextStep,
     extracted: {},
     internal_note: note,
     owner_phone: config.escalationPhone,
-    memory_updates: memory(intent, context, reply)
+    memory_updates: memory(intent, context, safeReply)
   });
 }
 
@@ -123,11 +137,11 @@ app.post('/webhooks/manychat', async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Invalid secret.' });
     }
 
-    const rawMsg = String(payload.last_user_message || '');
+const rawMsg = String(payload.last_user_message || '');
 const userMsg = rawMsg.toLowerCase();
 const normalizedMsg = normalizeForMatching(rawMsg);
 const rawTrim = rawMsg.trim().toLowerCase();    
-    
+const lastBotReply = String(payload.last_bot_reply || '').trim();    
 const isNoise =
   rawTrim === '?' ||
   rawTrim === '.' ||
