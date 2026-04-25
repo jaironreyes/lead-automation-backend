@@ -245,7 +245,34 @@ if (asksForLocationAfterHandoff) {
     owner_phone: config.escalationPhone
   });
 }   
-        return res.json({
+      if (
+  msg.includes('rebaja') ||
+  msg.includes('descuento') ||
+  msg.includes('negociable') ||
+  msg.includes('mejor precio')
+) {
+  return res.json({
+    ok: true,
+    reply_text: 'Entiendo 👍 El precio está bastante ajustado, pero si vienes a verla y tienes una propuesta seria, se puede conversar.\n\n¿Quieres que coordinemos la visita?',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Discount question handled after handoff',
+    owner_phone: config.escalationPhone
+  });
+}
+     if (msg.trim() === '?') {
+  return res.json({
+    ok: true,
+    reply_text: 'Entiendo 👍 Sobre la rebaja, el precio está bastante ajustado, pero si vienes a verla y tienes una propuesta seria, se puede conversar.\n\n¿Quieres que coordinemos la visita?',
+    status: 'handoff',
+    next_step_label: 'handoff_human',
+    extracted: {},
+    internal_note: 'Split discount question handled',
+    owner_phone: config.escalationPhone
+  });
+} 
+      return res.json({
         ok: true,
         reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
         status: 'handoff',
