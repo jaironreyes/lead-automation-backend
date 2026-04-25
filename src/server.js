@@ -596,34 +596,29 @@ if (isVisitAcceptance) {
   });
 }
     
-    // 5. SOFT CLOSE
-    const wantsLater =
-      normalizedMsg.includes('despues') ||
-      normalizedMsg.includes('mas tarde') ||
-      normalizedMsg.includes('luego') ||
-      normalizedMsg.includes('ahorita no') ||
-      normalizedMsg.includes('no ahora') ||
-      normalizedMsg.includes('quizas');
+    const isPropertyQuestion =
+    const isGreetingOnly =
+  normalizedMsg === 'hola' ||
+  normalizedMsg === 'saludos' ||
+  normalizedMsg === 'buenas' ||
+  normalizedMsg === 'buen dia' ||
+  normalizedMsg === 'buenas tardes' ||
+  normalizedMsg === 'buenas noches';
 
-    const hesitationStage =
-      String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
+if (isGreetingOnly) {
+  const reply = '¡Saludos! 👋 ¿Quieres más información de la casa o te gustaría coordinar una visita?';
 
-    if (wantsLater && hesitationStage) {
-      const reply =
-        'Perfecto 👍 Escríbeme cuando estés listo y coordinamos sin presión.';
-
-      return res.json({
-        ok: true,
-        reply_text: reply,
-        status: 'continue',
-        next_step_label: 'nurture',
-        extracted: {},
-        internal_note: 'Soft close handled',
-        owner_phone: config.escalationPhone,
-        memory_updates: memory('soft_close', 'later', reply)
-      });
-    }
-
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: currentStage || 'ask_intent',
+    extracted: {},
+    internal_note: 'Greeting handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('greeting', 'general', reply)
+  });
+}
     // 6. AI RESPONSE
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
