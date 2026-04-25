@@ -326,6 +326,7 @@ if (isHardSoftClose) {
         normalizedHandoffMsg.includes('rebaja') ||
         normalizedHandoffMsg.includes('descuento') ||
         normalizedHandoffMsg.includes('negociable') ||
+        normalizedHandoffMsg.includes('dejan') ||
         normalizedHandoffMsg.includes('mejor precio')
       ) {
         const reply =
