@@ -586,29 +586,6 @@ const isInNurtureMode =
   currentStage === 'nurture' ||
   lastIntent === 'soft_close';
 
-const isGreetingOnly =
-  normalizedMsg === 'hola' ||
-  normalizedMsg === 'saludos' ||
-  normalizedMsg === 'buenas' ||
-  normalizedMsg === 'buen dia' ||
-  normalizedMsg === 'buenas tardes' ||
-  normalizedMsg === 'buenas noches';
-
-if (isGreetingOnly) {
-  const reply = '¡Saludos! 👋 Claro, dime qué te gustaría saber de la casa.';
-
-  return res.json({
-    ok: true,
-    reply_text: reply,
-    status: 'continue',
-    next_step_label: currentStage || 'ask_intent',
-    extracted: {},
-    internal_note: 'Greeting handled',
-    owner_phone: config.escalationPhone,
-    memory_updates: memory('greeting', 'general', reply)
-  });
-}
-
 const wantsToAskFirst =
   normalizedMsg.includes('preguntar') ||
   normalizedMsg.includes('saber algo') ||
