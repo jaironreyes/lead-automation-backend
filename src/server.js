@@ -118,14 +118,17 @@ app.post('/webhooks/manychat', async (req, res) => {
     const rawMsg = String(payload.last_user_message || '');
 const userMsg = rawMsg.toLowerCase();
 const normalizedMsg = normalizeForMatching(rawMsg);
+const rawTrim = rawMsg.trim().toLowerCase();
 
 const isNoise =
-  normalizedMsg === '' ||
-  normalizedMsg === '?' ||
-  normalizedMsg === '.' ||
-  normalizedMsg === '👍' ||
-  normalizedMsg === 'ok' ||
-  normalizedMsg === 'dale';
+  rawTrim === '?' ||
+  rawTrim === '.' ||
+  rawTrim === '¿' ||
+  rawTrim === '!' ||
+  rawTrim === '¡' ||
+  rawTrim === '👍' ||
+  rawTrim === 'ok' ||
+  rawTrim === 'dale';
 
 if (isNoise) {
   return res.json({
@@ -135,7 +138,8 @@ if (isNoise) {
     next_step_label: 'none',
     extracted: {},
     internal_note: 'Noise ignored',
-    owner_phone: config.escalationPhone
+    owner_phone: config.escalationPhone,
+    memory_updates: memory(lastIntent, 'noise_ignored', '')
   });
 }
     
