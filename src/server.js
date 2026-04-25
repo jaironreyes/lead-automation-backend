@@ -545,7 +545,7 @@ if (isHardSoftClose) {
 const isInNurtureMode =
   currentStage === 'nurture' ||
   lastIntent === 'soft_close';
-const isPropertyQuestion =
+
   normalizedMsg.includes('agua') ||
   normalizedMsg.includes('luz') ||
   normalizedMsg.includes('electricidad') ||
@@ -570,7 +570,8 @@ if (isPropertyQuestion) {
     memory_updates: memory('question', 'property_info', reply)
   });
 }
-    
+
+    // 5. Soft
 const isVisitAcceptance =
   !isInNurtureMode &&
   (
@@ -596,8 +597,13 @@ if (isVisitAcceptance) {
   });
 }
     
-    const isPropertyQuestion =
-    const isGreetingOnly =
+const currentStage = String(payload.lead_stage || '').toLowerCase();
+
+const isInNurtureMode =
+  currentStage === 'nurture' ||
+  lastIntent === 'soft_close';
+
+const isGreetingOnly =
   normalizedMsg === 'hola' ||
   normalizedMsg === 'saludos' ||
   normalizedMsg === 'buenas' ||
@@ -617,6 +623,32 @@ if (isGreetingOnly) {
     internal_note: 'Greeting handled',
     owner_phone: config.escalationPhone,
     memory_updates: memory('greeting', 'general', reply)
+  });
+}
+
+const isPropertyQuestion =
+  normalizedMsg.includes('agua') ||
+  normalizedMsg.includes('luz') ||
+  normalizedMsg.includes('electricidad') ||
+  normalizedMsg.includes('servicio') ||
+  normalizedMsg.includes('internet') ||
+  normalizedMsg.includes('calle') ||
+  normalizedMsg.includes('asfalto') ||
+  normalizedMsg.includes('titulo') ||
+  normalizedMsg.includes('título');
+
+if (isPropertyQuestion) {
+  const reply = 'Sí 👍 La zona cuenta con agua y luz disponibles.\n\nSi quieres, puedes verla en persona para evaluar mejor todos los detalles.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: 'info_provided',
+    extracted: {},
+    internal_note: 'Property question handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('question', 'property_info', reply)
   });
 }
     // 6. AI RESPONSE
