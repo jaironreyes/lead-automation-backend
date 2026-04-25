@@ -74,26 +74,6 @@ function memory(last_intent = '', last_question_context = '', last_bot_reply = '
   return { last_intent, last_question_context, last_bot_reply };
 }
 
-function replyJson(res, {
-  reply,
-  status = 'continue',
-  nextStep = 'info_requested',
-  note = '',
-  intent = '',
-  context = ''
-}) {
-  return res.json({
-    ok: true,
-    reply_text: reply,
-    status,
-    next_step_label: nextStep,
-    extracted: {},
-    internal_note: note,
-    owner_phone: config.escalationPhone,
-    memory_updates: memory(intent, context, reply)
-  });
-}
-
 function detectNextStage(payload, aiNextStep) {
   const msg = normalizeForMatching(payload.last_user_message);
   const stage = String(payload.lead_stage || '').toLowerCase();
