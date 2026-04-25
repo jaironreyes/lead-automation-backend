@@ -115,7 +115,32 @@ app.post('/webhooks/manychat', async (req, res) => {
     const userMsg = String(payload.last_user_message || '').toLowerCase();
     const normalizedMsg = normalizeForMatching(userMsg);
     const lastIntent = String(payload.last_intent || '').toLowerCase();
+    // HARD STOP / USER NOT READY (SOFT CLOSE EARLY EXIT)
+const isHardSoftClose =
+  normalizedMsg.includes('despues') ||
+  normalizedMsg.includes('ahora no') ||
+  normalizedMsg.includes('no ahora') ||
+  normalizedMsg.includes('mas tarde') ||
+  normalizedMsg.includes('luego') ||
+  normalizedMsg.includes('cuando este listo') ||
+  normalizedMsg.includes('te aviso') ||
+  normalizedMsg.includes('no gracias');
 
+if (isHardSoftClose) {
+  const reply = 'Perfecto 👍 Escríbeme cuando estés listo y coordinamos sin presión.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: 'nurture',
+    extracted: {},
+    internal_note: 'Hard soft close handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('soft_close', 'later', reply)
+  });
+}
+    
     const locationReply =
       'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\n' +
       'Aquí tienes la ubicación exacta:\n' +
