@@ -485,3 +485,27 @@ return replyJson(res, {
   intent: 'fallback',
   context: 'general'
 });
+  } catch (error) {
+    console.error('Webhook error:', error);
+
+    return res.status(500).json({
+      ok: false,
+      reply_text: 'Gracias. Dame un momento y te respondo ahora mismo.',
+      status: 'handoff',
+      next_step_label: 'handoff_human',
+      extracted: {
+        budget: null,
+        intent: null,
+        area: null,
+        listing_count: null,
+        lead_source: null,
+        urgency: null
+      },
+      internal_note: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.listen(config.port, () => {
+  console.log(`Lead automation backend listening on port ${config.port}`);
+});
