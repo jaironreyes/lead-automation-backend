@@ -29,7 +29,8 @@ function replyJson(res, {
   nextStep = 'info_requested',
   note = '',
   intent = '',
-  context = ''
+  context = '',
+  lastBotReply = ''
 }) {
   const safeReply = avoidRepeat(reply, lastBotReply);
 
@@ -41,7 +42,8 @@ function replyJson(res, {
       next_step_label: 'none',
       extracted: {},
       internal_note: 'Duplicate reply blocked',
-      owner_phone: config.escalationPhone
+      owner_phone: config.escalationPhone,
+      memory_updates: memory(intent, context, '')
     });
   }
 
@@ -140,8 +142,11 @@ app.post('/webhooks/manychat', async (req, res) => {
 const rawMsg = String(payload.last_user_message || '');
 const userMsg = rawMsg.toLowerCase();
 const normalizedMsg = normalizeForMatching(rawMsg);
-const rawTrim = rawMsg.trim().toLowerCase();    
+const rawTrim = rawMsg.trim().toLowerCase(); 
+const currentStage = String(payload.lead_stage || '').toLowerCase();    
+const lastIntent = String(payload.last_intent || '').toLowerCase();    
 const lastBotReply = String(payload.last_bot_reply || '').trim();    
+
 const isNoise =
   rawTrim === '?' ||
   rawTrim === '.' ||
@@ -165,8 +170,7 @@ if (isNoise) {
   });
 }
     
-    const currentStage = String(payload.lead_stage || '').toLowerCase();
-    const lastIntent = String(payload.last_intent || '').toLowerCase();
+  
 
     const locationReply =
       'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\n' +
