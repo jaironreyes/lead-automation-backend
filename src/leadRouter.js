@@ -8,6 +8,9 @@ export const inboundSchema = z.object({
   user_name: z.string().optional().default(''),
   last_user_message: z.string().min(1),
   lead_stage: z.string().optional().default('unknown'),
+  last_intent: z.string().optional().default(''),
+  last_question_context: z.string().optional().default(''),
+  last_bot_reply: z.string().optional().default(''),
   context: z
     .object({
       previous_answers: z.record(z.string()).optional().default({}),
