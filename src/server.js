@@ -6,22 +6,26 @@ import { responseJsonSchema } from './schemas.js';
 import { buildConversationInput, inboundSchema } from './leadRouter.js';
 
 function normalizeSpanish(text) {
-  return text
-    // accents
+  return String(text || '')
     .replace(/manana/gi, 'mañana')
-    .replace(/tarde(cita)?/gi, 'tarde')
-    .replace(/temprano/gi, 'en la mañana')
+    .replace(/miercoles/gi, 'miércoles')
+    .replace(/sabado/gi, 'sábado')
     .replace(/tardecita/gi, 'en la tarde')
     .replace(/nochecita/gi, 'en la noche')
-    .replace(/si\b/gi, 'sí')
-
-    // normalize informal phrases
-    .replace(/tipo\s*(\d+)/gi, '$1')
-    .replace(/como a las?\s*(\d+)/gi, '$1')
-    .replace(/eso de las?\s*(\d+)/gi, '$1');
+    .replace(/temprano/gi, 'en la mañana')
+    .replace(/si\b/gi, 'sí');
 }
+
+function normalizeForMatching(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[¿?¡!.,]/g, '');
+}
+
 function interpretTime(text) {
-  const msg = text.toLowerCase();
+  const msg = String(text || '').toLowerCase();
 
   if (msg.includes('mañana') || msg.includes('temprano')) {
     return 'en la mañana (9:00 AM aprox.)';
@@ -35,13 +39,15 @@ function interpretTime(text) {
     return 'en la noche (6:30 PM aprox.)';
   }
 
-  // exact hour
-  const hourMatch = msg.match(/\b(\d{1,2})(:\d{2})?\b/);
-  if (hourMatch) {
-    return hourMatch[0];
-  }
-
   return text;
+}
+
+function memory(last_intent = '', last_question_context = '', last_bot_reply = '') {
+  return {
+    last_intent,
+    last_question_context,
+    last_bot_reply
+  };
 }
 
 const app = express();
@@ -107,215 +113,281 @@ app.post('/webhooks/manychat', async (req, res) => {
     }
 
     const userMsg = String(payload.last_user_message || '').toLowerCase();
+    const normalizedMsg = normalizeForMatching(userMsg);
+    const lastIntent = String(payload.last_intent || '').toLowerCase();
+
+    const locationReply =
+      'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\n' +
+      'Aquí tienes la ubicación exacta:\n' +
+      'https://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\n' +
+      'Cuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.';
+
+    // 0. SPLIT MESSAGE MEMORY HANDLER
+    if (userMsg.trim() === '?' && lastIntent === 'discount') {
+      const reply =
+        'Entiendo 👍 Sobre la rebaja, el precio está bastante ajustado.\n\n' +
+        'Si vienes a verla y te interesa, se puede conversar una propuesta seria.';
+
+      return res.json({
+        ok: true,
+        reply_text: reply,
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Split discount handled from memory',
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('discount', 'rebaja', reply)
+      });
+    }
+
+    const asksForDiscount =
+      normalizedMsg.includes('rebaja') ||
+      normalizedMsg.includes('descuento') ||
+      normalizedMsg.includes('negociable') ||
+      normalizedMsg.includes('mejor precio');
+
+    if (asksForDiscount) {
+      const reply =
+        'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\n' +
+        'Si te interesa, lo ideal es verla primero y luego podemos conversar.';
+
+      return res.json({
+        ok: true,
+        reply_text: reply,
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Discount question handled',
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('discount', 'rebaja', reply)
+      });
+    }
 
     // 1. HANDOFF LOCK
     if (String(payload.lead_stage || '').toLowerCase() === 'handoff_human') {
       const msg = userMsg;
+      const normalizedHandoffMsg = normalizeForMatching(msg);
 
       const hasPhoneNumber = /\b(809|829|849)[-\s]?\d{3}[-\s]?\d{4}\b/.test(msg);
 
       if (hasPhoneNumber) {
+        const reply =
+          'Perfecto 🔥 Ya tengo tu WhatsApp.\n\n' +
+          'Te escribo por ahí con la ubicación y los detalles de la visita.';
+
         return res.json({
           ok: true,
-          reply_text: 'Perfecto 🔥 Ya tengo tu WhatsApp.\n\nTe escribo por ahí con la ubicación y los detalles de la visita.',
+          reply_text: reply,
           status: 'handoff',
           next_step_label: 'handoff_human',
           extracted: {},
           internal_note: 'WhatsApp number captured',
-          owner_phone: config.escalationPhone
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('phone_captured', 'whatsapp', reply)
         });
       }
 
       if (
-        msg.includes('ya te lo di') ||
-        msg.includes('ya te lo mande') ||
-        msg.includes('ya te lo envié')
+        normalizedHandoffMsg.includes('ya te lo di') ||
+        normalizedHandoffMsg.includes('ya te lo mande') ||
+        normalizedHandoffMsg.includes('ya te lo envie')
       ) {
+        const reply =
+          'Perfecto 🔥 Ya lo tengo.\n\n' +
+          'Te escribo ahora con la ubicación y los detalles.';
+
         return res.json({
           ok: true,
-          reply_text: 'Perfecto 🔥 Ya lo tengo.\n\nTe escribo ahora con la ubicación y los detalles.',
+          reply_text: reply,
           status: 'handoff',
           next_step_label: 'handoff_human',
           extracted: {},
           internal_note: 'User confirmed phone previously',
-          owner_phone: config.escalationPhone
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('phone_confirmed', 'whatsapp', reply)
         });
       }
 
-      if (msg.includes('gracias')) {
+      if (normalizedHandoffMsg.includes('gracias')) {
+        const reply = 'A la orden 👍';
+
         return res.json({
           ok: true,
-          reply_text: 'A la orden 👍',
+          reply_text: reply,
           status: 'handoff',
           next_step_label: 'handoff_human',
           extracted: {},
           internal_note: 'Thanks handled after handoff',
-          owner_phone: config.escalationPhone
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('thanks', 'soft_close', reply)
         });
       }
 
-      if (msg.includes('whatsapp') && msg.includes('mejor')) {
+      if (normalizedHandoffMsg.includes('whatsapp') && normalizedHandoffMsg.includes('mejor')) {
+        const reply = 'Perfecto 👍 entonces seguimos por WhatsApp.';
+
         return res.json({
           ok: true,
-          reply_text: 'Perfecto 👍 entonces seguimos por WhatsApp.',
+          reply_text: reply,
           status: 'handoff',
           next_step_label: 'handoff_human',
           extracted: {},
           internal_note: 'WhatsApp preference handled',
-          owner_phone: config.escalationPhone
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('whatsapp_preference', 'handoff', reply)
         });
       }
 
-      if (msg.includes('whatsapp') && (msg.includes('no') || msg.includes('no tengo'))) {
+      if (
+        normalizedHandoffMsg.includes('whatsapp') &&
+        (normalizedHandoffMsg.includes('no') || normalizedHandoffMsg.includes('no tengo'))
+      ) {
+        const reply =
+          'No hay problema 👍 Podemos seguir por aquí mismo.\n\n' +
+          'Te paso la ubicación y coordinamos todo por este DM.';
+
         return res.json({
           ok: true,
-          reply_text: 'No hay problema 👍 Podemos seguir por aquí mismo.\n\nTe paso la ubicación y coordinamos todo por este DM.',
+          reply_text: reply,
           status: 'handoff',
           next_step_label: 'handoff_human',
           extracted: {},
           internal_note: 'No WhatsApp handled',
-          owner_phone: config.escalationPhone
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('no_whatsapp', 'handoff', reply)
         });
       }
-     if (
-      msg === 'si' ||
-      msg === 'sí' ||
-      msg === 'esta bien' ||
-      msg === 'está bien' ||
-      msg.includes('para ver dónde') ||
-      msg.includes('para ver donde') ||
-      msg.includes('ubicación') ||
-      msg.includes('ubicacion')
-) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\nCuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Exact location sent',
-    owner_phone: config.escalationPhone
-  });
-    if (
-      msg === 'bien' ||
-      msg.includes('mandala') ||
-      msg.includes('mándala') ||
-      msg.includes('pasamela') ||
-      msg.includes('pásamela') ||
-      msg.includes('enviamela') ||
-      msg.includes('envíamela') ||
-      msg.includes('ubicación') ||
-      msg.includes('ubicacion')
-) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Exact location sent',
-    owner_phone: config.escalationPhone
-  });
-}
-}
-   const normalizedHandoffMsg = msg
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[¿?¡!.,]/g, "");
 
-const asksForLocationAfterHandoff =
-  normalizedHandoffMsg.includes('ubicacion') ||
-  normalizedHandoffMsg.includes('mandame') ||
-  normalizedHandoffMsg.includes('mandamela') ||
-  normalizedHandoffMsg.includes('mandala') ||
-  normalizedHandoffMsg.includes('pasamela') ||
-  normalizedHandoffMsg.includes('enviamela') ||
-  normalizedHandoffMsg.includes('donde esta') ||
-  normalizedHandoffMsg.includes('donde queda') ||
-  normalizedHandoffMsg.includes('direccion');
+      const asksForLocationAfterHandoff =
+        normalizedHandoffMsg.includes('ubicacion') ||
+        normalizedHandoffMsg.includes('mandame') ||
+        normalizedHandoffMsg.includes('mandamela') ||
+        normalizedHandoffMsg.includes('mandala') ||
+        normalizedHandoffMsg.includes('pasamela') ||
+        normalizedHandoffMsg.includes('enviamela') ||
+        normalizedHandoffMsg.includes('donde esta') ||
+        normalizedHandoffMsg.includes('donde queda') ||
+        normalizedHandoffMsg.includes('direccion');
 
-if (asksForLocationAfterHandoff) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\nCuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Exact location sent after handoff',
-    owner_phone: config.escalationPhone
-  });
-}   
+      if (asksForLocationAfterHandoff) {
+        return res.json({
+          ok: true,
+          reply_text: locationReply,
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'Exact location sent after handoff',
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('location_sent', 'location', locationReply)
+        });
+      }
+
+      if (normalizedHandoffMsg.includes('titulo')) {
+        const reply = 'Sí 👍 La propiedad tiene título al día.';
+
+        return res.json({
+          ok: true,
+          reply_text: reply,
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'Title answered after handoff',
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('title_answered', 'title', reply)
+        });
+      }
+
       if (
-  msg.includes('rebaja') ||
-  msg.includes('descuento') ||
-  msg.includes('negociable') ||
-  msg.includes('mejor precio')
-) {
-  return res.json({
-    ok: true,
-    reply_text: 'Entiendo 👍 El precio está bastante ajustado, pero si vienes a verla y tienes una propuesta seria, se puede conversar.\n\n¿Quieres que coordinemos la visita?',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Discount question handled after handoff',
-    owner_phone: config.escalationPhone
-  });
-}
-     if (msg.trim() === '?') {
-  return res.json({
-    ok: true,
-    reply_text: 'Entiendo 👍 Sobre la rebaja, el precio está bastante ajustado, pero si vienes a verla y tienes una propuesta seria, se puede conversar.\n\n¿Quieres que coordinemos la visita?',
-    status: 'handoff',
-    next_step_label: 'handoff_human',
-    extracted: {},
-    internal_note: 'Split discount question handled',
-    owner_phone: config.escalationPhone
-  });
-} 
+        normalizedHandoffMsg.includes('rebaja') ||
+        normalizedHandoffMsg.includes('descuento') ||
+        normalizedHandoffMsg.includes('negociable') ||
+        normalizedHandoffMsg.includes('mejor precio')
+      ) {
+        const reply =
+          'Entiendo 👍 El precio está bastante ajustado, pero si vienes a verla y tienes una propuesta seria, se puede conversar.\n\n' +
+          '¿Quieres que coordinemos la visita?';
+
+        return res.json({
+          ok: true,
+          reply_text: reply,
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'Discount question handled after handoff',
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('discount', 'rebaja', reply)
+        });
+      }
+
+      if (msg.trim() === '?' && lastIntent === 'discount') {
+        const reply =
+          'Entiendo 👍 Sobre la rebaja, el precio está bastante ajustado.\n\n' +
+          'Si vienes a verla y tienes una propuesta seria, se puede conversar.';
+
+        return res.json({
+          ok: true,
+          reply_text: reply,
+          status: 'handoff',
+          next_step_label: 'handoff_human',
+          extracted: {},
+          internal_note: 'Split discount question handled after handoff',
+          owner_phone: config.escalationPhone,
+          memory_updates: memory('discount', 'rebaja', reply)
+        });
+      }
+
+      const reply =
+        'Perfecto 👍\n\n' +
+        'Te paso la ubicación por aquí y coordinamos la visita por este DM.';
+
       return res.json({
         ok: true,
-        reply_text: 'Perfecto 👍\n\nTe paso la ubicación por aquí y coordinamos la visita por este DM.',
+        reply_text: reply,
         status: 'handoff',
         next_step_label: 'handoff_human',
         extracted: {},
         internal_note: 'Handoff handled',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('handoff', 'default', reply)
       });
     }
-  
+
     // 2. PRICE / NEGOTIATION HANDLERS
     const isMinimumAsk =
-      userMsg.includes('lo minimo') ||
-      userMsg.includes('mínimo') ||
-      userMsg.includes('minimo') ||
-      userMsg.includes('lo menos') ||
-      userMsg.includes('precio final');
+      normalizedMsg.includes('lo minimo') ||
+      normalizedMsg.includes('minimo') ||
+      normalizedMsg.includes('lo menos') ||
+      normalizedMsg.includes('precio final');
 
     if (isMinimumAsk) {
+      const reply =
+        'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\n' +
+        'Lo ideal es que la veas primero y así evalúas si realmente te conviene. ¿Te gustaría visitarla?';
+
       return res.json({
         ok: true,
-        reply_text: 'Entiendo 👍 El precio está bastante ajustado por el potencial que tiene la propiedad.\n\nLo ideal es que la veas primero y así evalúas si realmente te conviene. ¿Te gustaría visitarla?',
+        reply_text: reply,
         status: 'continue',
         next_step_label: 'visit_interest',
         extracted: {},
         internal_note: 'Minimum price negotiation handled',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('minimum_price', 'price', reply)
       });
     }
 
     const priceNumber = parseFloat(userMsg.replace(/[^0-9.]/g, ''));
 
     const mentionsPrice =
-      userMsg.includes('millones') ||
-      userMsg.includes('millon') ||
-      userMsg.includes('millón') ||
-      userMsg.includes('la dejan') ||
-      userMsg.includes('lo dejan') ||
-      userMsg.includes('cogen') ||
-      userMsg.includes('aceptan') ||
-      /\ben\s*\d/.test(userMsg) ||
-      userMsg.includes('te doy') ||
-      userMsg.includes('ofrezco');
+      normalizedMsg.includes('millones') ||
+      normalizedMsg.includes('millon') ||
+      normalizedMsg.includes('la dejan') ||
+      normalizedMsg.includes('lo dejan') ||
+      normalizedMsg.includes('cogen') ||
+      normalizedMsg.includes('aceptan') ||
+      /\ben\s*\d/.test(normalizedMsg) ||
+      normalizedMsg.includes('te doy') ||
+      normalizedMsg.includes('ofrezco');
 
     const isNearOffer =
       mentionsPrice &&
@@ -324,14 +396,19 @@ if (asksForLocationAfterHandoff) {
       priceNumber < 4.5;
 
     if (isNearOffer) {
+      const reply =
+        'Estás bastante cerca 👍\n\n' +
+        'Lo ideal es que la veas en persona primero y, si realmente te interesa, se puede conversar con una propuesta seria. ¿Te gustaría coordinar una visita?';
+
       return res.json({
         ok: true,
-        reply_text: 'Estás bastante cerca 👍\n\nLo ideal es que la veas en persona primero y, si realmente te interesa, se puede conversar con una propuesta seria. ¿Te gustaría coordinar una visita?',
+        reply_text: reply,
         status: 'continue',
         next_step_label: 'visit_interest',
         extracted: {},
         internal_note: 'Near offer handled',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('near_offer', 'price', reply)
       });
     }
 
@@ -341,141 +418,155 @@ if (asksForLocationAfterHandoff) {
       priceNumber < 4.0;
 
     if (isLowball) {
+      const reply =
+        'Entiendo 👍 Pero por ese rango se queda fuera del valor actual de la propiedad.\n\n' +
+        'Si quieres verla, puedes evaluar mejor el potencial real. ¿Te gustaría visitarla?';
+
       return res.json({
         ok: true,
-        reply_text: 'Entiendo 👍 Pero por ese rango se queda fuera del valor actual de la propiedad.\n\nSi quieres verla, puedes evaluar mejor el potencial real. ¿Te gustaría visitarla?',
+        reply_text: reply,
         status: 'continue',
         next_step_label: 'visit_interest',
         extracted: {},
         internal_note: 'Lowball handled',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('lowball', 'price', reply)
       });
     }
 
-    // 3. VISIT TIME / ACCEPTANCE
+    // 3. LOCATION REQUEST
+    const asksForLocation =
+      normalizedMsg.includes('ubicacion') ||
+      normalizedMsg.includes('mandame la ubicacion') ||
+      normalizedMsg.includes('mandamela') ||
+      normalizedMsg.includes('mandala') ||
+      normalizedMsg.includes('pasamela') ||
+      normalizedMsg.includes('enviamela') ||
+      normalizedMsg.includes('donde esta') ||
+      normalizedMsg.includes('donde queda') ||
+      normalizedMsg.includes('direccion');
+
+    if (asksForLocation) {
+      return res.json({
+        ok: true,
+        reply_text: locationReply,
+        status: 'continue',
+        next_step_label: 'visit_interest',
+        extracted: {},
+        internal_note: 'Location requested and sent',
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('location_sent', 'location', locationReply)
+      });
+    }
+
+    // 4. VISIT TIME / ACCEPTANCE
     const hasVisitTime =
-      userMsg.includes('hoy') ||
-      userMsg.includes('mañana') ||
-      userMsg.includes('lunes') ||
-      userMsg.includes('martes') ||
-      userMsg.includes('miércoles') ||
-      userMsg.includes('miercoles') ||
-      userMsg.includes('jueves') ||
-      userMsg.includes('viernes') ||
-      userMsg.includes('sábado') ||
-      userMsg.includes('sabado') ||
-      userMsg.includes('domingo') ||
-      userMsg.includes('en la mañana') ||
-      userMsg.includes('en la tarde') ||
-      userMsg.includes('en la noche') ||
-      /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(userMsg);
+      normalizedMsg.includes('hoy') ||
+      normalizedMsg.includes('manana') ||
+      normalizedMsg.includes('lunes') ||
+      normalizedMsg.includes('martes') ||
+      normalizedMsg.includes('miercoles') ||
+      normalizedMsg.includes('jueves') ||
+      normalizedMsg.includes('viernes') ||
+      normalizedMsg.includes('sabado') ||
+      normalizedMsg.includes('domingo') ||
+      normalizedMsg.includes('en la manana') ||
+      normalizedMsg.includes('en la tarde') ||
+      normalizedMsg.includes('en la noche') ||
+      /\b(a las|a eso de|como a las)\s*\d{1,2}(:\d{2})?\s?(am|pm)?\b/.test(normalizedMsg);
 
     if (hasVisitTime) {
-    const cleanMsg = normalizeSpanish(payload.last_user_message);
-     const finalTime = interpretTime(cleanMsg);
+      const cleanMsg = normalizeSpanish(payload.last_user_message);
+      const finalTime = interpretTime(cleanMsg);
+      const reply =
+        `Perfecto 🔥 Queda anotado para ${finalTime}.\n\n` +
+        'Te escribo con la ubicación y los detalles de la visita.';
 
       return res.json({
         ok: true,
-        reply_text: `Perfecto 🔥 Queda anotado para ${finalTime}.\n\nTe escribo con la ubicación y los detalles de la visita.`,
+        reply_text: reply,
         status: 'handoff',
         next_step_label: 'handoff_human',
         extracted: {},
         internal_note: 'Visit time captured directly',
-        owner_phone: config.escalationPhone
-  });
-}
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('visit_scheduled', 'visit_time', reply)
+      });
+    }
 
     const alreadyAnswered =
-      userMsg.includes('ya te respondi') ||
-      userMsg.includes('ya te respondí') ||
-      userMsg.includes('ya te dije');
+      normalizedMsg.includes('ya te respondi') ||
+      normalizedMsg.includes('ya te dije');
 
     if (alreadyAnswered) {
+      const reply =
+        'Tienes razón 👍 Ya tengo tu respuesta.\n\n' +
+        'Te escribo con la ubicación y los detalles de la visita.';
+
       return res.json({
         ok: true,
-        reply_text: 'Tienes razón 👍 Ya tengo tu respuesta.\n\nTe escribo con la ubicación y los detalles de la visita.',
+        reply_text: reply,
         status: 'handoff',
         next_step_label: 'handoff_human',
         extracted: {},
         internal_note: 'User said they already answered',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('already_answered', 'visit', reply)
       });
     }
 
     const isVisitAcceptance =
-      userMsg === 'si' ||
-      userMsg === 'sí' ||
-      userMsg === 'dale' ||
-      userMsg === 'perfecto' ||
-      userMsg === 'esta bien' ||
-      userMsg === 'está bien';
+      normalizedMsg === 'si' ||
+      normalizedMsg === 'dale' ||
+      normalizedMsg === 'perfecto' ||
+      normalizedMsg === 'esta bien' ||
+      normalizedMsg === 'bien';
 
     if (isVisitAcceptance) {
+      const reply =
+        '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?';
+
       return res.json({
         ok: true,
-        reply_text: '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?',
+        reply_text: reply,
         status: 'continue',
         next_step_label: 'schedule_visit',
         extracted: {},
         internal_note: 'Visit acceptance detected',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('visit_acceptance', 'visit', reply)
       });
     }
 
-    // 4. SOFT CLOSE
+    // 5. SOFT CLOSE
     const wantsLater =
-      userMsg.includes('despues') ||
-      userMsg.includes('después') ||
-      userMsg.includes('mas tarde') ||
-      userMsg.includes('más tarde') ||
-      userMsg.includes('luego') ||
-      userMsg.includes('ahorita no') ||
-      userMsg.includes('no ahora') ||
-      userMsg.includes('quizas') ||
-      userMsg.includes('quizás');
+      normalizedMsg.includes('despues') ||
+      normalizedMsg.includes('mas tarde') ||
+      normalizedMsg.includes('luego') ||
+      normalizedMsg.includes('ahorita no') ||
+      normalizedMsg.includes('no ahora') ||
+      normalizedMsg.includes('quizas');
 
     const hesitationStage =
       String(payload.lead_stage || '').toLowerCase() !== 'schedule_visit';
 
     if (wantsLater && hesitationStage) {
+      const reply =
+        'Perfecto 👍 Escríbeme cuando estés listo y coordinamos sin presión.';
+
       return res.json({
         ok: true,
-        reply_text: 'Perfecto 👍 Aquí estoy si necesitas más información o quieres retomarlo más adelante.',
+        reply_text: reply,
         status: 'continue',
         next_step_label: 'nurture',
         extracted: {},
         internal_note: 'Soft close handled',
-        owner_phone: config.escalationPhone
+        owner_phone: config.escalationPhone,
+        memory_updates: memory('soft_close', 'later', reply)
       });
     }
 
-    const normalizedMsg = userMsg
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove accents
-    .replace(/[¿?¡!.,]/g, ""); // remove punctuation
-    const asksForLocation =
-     normalizedMsg.includes('ubicacion') ||
-     normalizedMsg.includes('mandame la ubicacion') ||
-     normalizedMsg.includes('mandamela') ||
-     normalizedMsg.includes('mandala') ||
-     normalizedMsg.includes('pasamela') ||
-     normalizedMsg.includes('enviamela') ||
-     normalizedMsg.includes('donde esta') ||
-     normalizedMsg.includes('donde queda') ||
-     normalizedMsg.includes('direccion');
-
-if (asksForLocation) {
-  return res.json({
-    ok: true,
-    reply_text: 'Perfecto 👍 La casa está ubicada en Residencial Doña María, Santo Domingo Norte.\n\nAquí tienes la ubicación exacta:\nhttps://maps.app.goo.gl/NAB4CLb9d4xDSgvH7\n\nCuando llegues, me escribes por aquí o por WhatsApp para coordinar la visita.',
-    status: 'continue',
-    next_step_label: 'visit_interest',
-    extracted: {},
-    internal_note: 'Location requested and sent',
-    owner_phone: config.escalationPhone
-  });
-}
-    // 5. AI RESPONSE
+    // 6. AI RESPONSE
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
       leadType: payload.lead_type,
@@ -534,11 +625,10 @@ if (asksForLocation) {
     }
 
     const alreadySaidIntent =
-      userMsg.includes('vivir') ||
-      userMsg.includes('vivienda') ||
-      userMsg.includes('invertir') ||
-      userMsg.includes('inversion') ||
-      userMsg.includes('inversión');
+      normalizedMsg.includes('vivir') ||
+      normalizedMsg.includes('vivienda') ||
+      normalizedMsg.includes('invertir') ||
+      normalizedMsg.includes('inversion');
 
     if (alreadySaidIntent && forcedReply.toLowerCase().includes('vivir')) {
       forcedReply = 'Perfecto 👌 ¿Te gustaría venir a verla en persona?';
@@ -557,7 +647,8 @@ if (asksForLocation) {
       next_step_label: forcedNextStep,
       extracted: parsed.extracted,
       internal_note: parsed.internal_note,
-      owner_phone: config.escalationPhone
+      owner_phone: config.escalationPhone,
+      memory_updates: memory('ai_response', 'general', finalReply)
     });
   } catch (error) {
     console.error('Webhook error:', error);
