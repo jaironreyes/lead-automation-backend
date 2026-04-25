@@ -116,14 +116,10 @@ app.post('/webhooks/manychat', async (req, res) => {
     }
 
     const rawMsg = String(payload.last_user_message || '');
-    const userMsg = rawMsg.toLowerCase();
-    
-    const normalizedMsg = userMsg
-       .normalize("NFD")
-       .replace(/[\u0300-\u036f]/g, "")
-       .replace(/[¿?¡!.,]/g, "")
-       .trim();
-    const isNoise =
+const userMsg = rawMsg.toLowerCase();
+const normalizedMsg = normalizeForMatching(rawMsg);
+
+const isNoise =
   normalizedMsg === '' ||
   normalizedMsg === '?' ||
   normalizedMsg === '.' ||
