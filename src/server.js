@@ -515,28 +515,6 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
-    const isVisitAcceptance =
-      normalizedMsg === 'si' ||
-      normalizedMsg === 'dale' ||
-      normalizedMsg === 'perfecto' ||
-      normalizedMsg === 'esta bien' ||
-      normalizedMsg === 'bien';
-
-    if (isVisitAcceptance) {
-      const reply =
-        '¡Perfecto! 👍 ¿Qué día y hora te viene mejor para visitar la propiedad?';
-
-      return res.json({
-        ok: true,
-        reply_text: reply,
-        status: 'continue',
-        next_step_label: 'schedule_visit',
-        extracted: {},
-        internal_note: 'Visit acceptance detected',
-        owner_phone: config.escalationPhone,
-        memory_updates: memory('visit_acceptance', 'visit', reply)
-      });
-    }
     const currentStage = String(payload.lead_stage || '').toLowerCase();
 
 const isInNurtureMode =
