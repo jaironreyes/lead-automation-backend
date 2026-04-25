@@ -149,23 +149,36 @@ app.post('/webhooks/manychat', async (req, res) => {
     }
 
     // 2. GREETING / RESET
-    const isGreetingOnly =
-      normalizedMsg === 'hola' ||
-      normalizedMsg === 'saludos' ||
-      normalizedMsg === 'buenas' ||
-      normalizedMsg === 'buen dia' ||
-      normalizedMsg === 'buenas tardes' ||
-      normalizedMsg === 'buenas noches';
 
-    if (isGreetingOnly) {
-      return replyJson(res, {
-        reply: '¡Saludos! 👋 Claro, dime qué te gustaría saber de la casa.',
-        nextStep: 'info_requested',
-        note: 'Greeting handled',
-        intent: 'greeting',
-        context: 'general'
-      });
-    }
+const firstName = String(payload.first_name || '').trim();
+const namePrefix = firstName ? `${firstName}, ` : '';
+
+    const isGreetingOnly =
+       normalizedMsg === 'hola' ||
+       normalizedMsg === 'saludos' ||
+       normalizedMsg === 'buenas' ||
+       normalizedMsg === 'buen dia' ||
+       normalizedMsg === 'buenas tardes' ||
+       normalizedMsg === 'buenas noches';
+
+       if (isGreetingOnly) {
+
+  const greetings = [
+    `¡Saludos! 👋 ${namePrefix}dime qué te gustaría saber de la casa.`,
+    `Hola 👋 ${namePrefix}cuéntame, ¿qué te gustaría saber?`,
+    `¡Hey! 👋 ${namePrefix}dime, ¿qué quieres saber de la propiedad?`
+  ];
+
+  const reply = greetings[Math.floor(Math.random() * greetings.length)];
+
+  return replyJson(res, {
+    reply,
+    nextStep: 'info_requested',
+    note: 'Greeting handled',
+    intent: 'greeting',
+    context: 'general'
+  });
+}
 
     // 3. USER WANTS TO ASK FIRST
     const wantsToAskFirst =
