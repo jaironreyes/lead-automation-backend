@@ -477,94 +477,11 @@ if (asksPrice) {
         context: 'default'
       });
     }
-
-    // 11. AI FALLBACK — only for messages not covered above
-    const input = buildConversationInput(payload);
-    const systemPrompt = buildSystemPrompt({
-      leadType: payload.lead_type,
-      lead_stage: payload.lead_stage
-    });
-
-    const aiResponse = await openai.responses.create({
-      model: config.openAiModel,
-      input: [
-        {
-          role: 'system',
-          content: [{ type: 'input_text', text: systemPrompt }]
-        },
-        {
-          role: 'user',
-          content: [{ type: 'input_text', text: input }]
-        }
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: responseJsonSchema.name,
-          schema: responseJsonSchema.schema,
-          strict: true
-        }
-      }
-    });
-
-    const rawText = aiResponse.output_text?.trim();
-
-    if (!rawText) {
-      throw new Error('No model output_text returned.');
-    }
-
-    const parsed = JSON.parse(rawText);
-    const nextStep = detectNextStage(payload, parsed.next_step_label);
-
-    let finalReply = parsed.reply_text;
-
-    const badPatterns = [
-      'cuántas propiedades',
-      'cuantas propiedades',
-      'qué zona',
-      'que zona',
-      'dónde buscas',
-      'donde buscas',
-      'otras propiedades',
-      'más opciones',
-      'mas opciones'
-    ];
-
-    if (badPatterns.some((p) => finalReply.toLowerCase().includes(p))) {
-      finalReply = 'Claro 👍 Dime qué te gustaría saber de esta casa.';
-    }
-
-    return res.json({
-      ok: true,
-      reply_text: finalReply,
-      status: nextStep === 'handoff_human' ? 'handoff' : parsed.status,
-      next_step_label: nextStep,
-      extracted: parsed.extracted,
-      internal_note: parsed.internal_note,
-      owner_phone: config.escalationPhone,
-      memory_updates: memory('ai_response', 'general', finalReply)
-    });
-  } catch (error) {
-    console.error('Webhook error:', error);
-
-    return res.status(500).json({
-      ok: false,
-      reply_text: 'Gracias. Dame un momento y te respondo ahora mismo.',
-      status: 'handoff',
-      next_step_label: 'handoff_human',
-      extracted: {
-        budget: null,
-        intent: null,
-        area: null,
-        listing_count: null,
-        lead_source: null,
-        urgency: null
-      },
-      internal_note: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-app.listen(config.port, () => {
-  console.log(`Lead automation backend listening on port ${config.port}`);
+// 12. SAFE FALLBACK (TEMPORARY)
+return replyJson(res, {
+  reply: 'Claro 👍 Dime qué te gustaría saber de la casa.',
+  nextStep: 'info_requested',
+  note: 'Safe fallback used',
+  intent: 'fallback',
+  context: 'general'
 });
