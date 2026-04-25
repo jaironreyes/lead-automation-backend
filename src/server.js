@@ -142,6 +142,8 @@ app.post('/webhooks/manychat', async (req, res) => {
 const rawMsg = String(payload.last_user_message || '');
 const userMsg = rawMsg.toLowerCase();
 const normalizedMsg = normalizeForMatching(rawMsg);
+console.log('RAW MESSAGE:', rawMsg);
+console.log('NORMALIZED MESSAGE:', normalizedMsg);
 const rawTrim = rawMsg.trim().toLowerCase(); 
 const currentStage = String(payload.lead_stage || '').toLowerCase();    
 const lastIntent = String(payload.last_intent || '').toLowerCase();    
