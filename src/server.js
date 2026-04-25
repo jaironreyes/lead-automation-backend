@@ -542,9 +542,82 @@ if (isHardSoftClose) {
 
     const currentStage = String(payload.lead_stage || '').toLowerCase();
 
+const isInNurtureMode =
+  currentStage === 'nurture' ||
+  lastIntent === 'soft_close';
 
+const isGreetingOnly =
+  normalizedMsg === 'hola' ||
+  normalizedMsg === 'saludos' ||
+  normalizedMsg === 'buenas' ||
+  normalizedMsg === 'buen dia' ||
+  normalizedMsg === 'buenas tardes' ||
+  normalizedMsg === 'buenas noches';
 
-    // 5. Soft
+if (isGreetingOnly) {
+  const reply = '¡Saludos! 👋 Claro, dime qué te gustaría saber de la casa.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: currentStage || 'ask_intent',
+    extracted: {},
+    internal_note: 'Greeting handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('greeting', 'general', reply)
+  });
+}
+
+const wantsToAskFirst =
+  normalizedMsg.includes('preguntar') ||
+  normalizedMsg.includes('saber algo') ||
+  normalizedMsg.includes('algo primero') ||
+  normalizedMsg.includes('primero');
+
+if (wantsToAskFirst) {
+  const reply = 'Claro 👍 Pregúntame lo que quieras saber de la casa.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: currentStage || 'info_requested',
+    extracted: {},
+    internal_note: 'User wants to ask first',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('question_pending', 'property_info', reply)
+  });
+}
+
+const isPropertyQuestion =
+  normalizedMsg.includes('agua') ||
+  normalizedMsg.includes('luz') ||
+  normalizedMsg.includes('electricidad') ||
+  normalizedMsg.includes('servicio') ||
+  normalizedMsg.includes('internet') ||
+  normalizedMsg.includes('calle') ||
+  normalizedMsg.includes('asfalto') ||
+  normalizedMsg.includes('titulo') ||
+  normalizedMsg.includes('title');
+
+if (isPropertyQuestion) {
+  const reply = normalizedMsg.includes('titulo')
+    ? 'Sí 👍 La propiedad tiene título al día.'
+    : 'Sí 👍 La zona cuenta con agua y luz disponibles.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: 'info_provided',
+    extracted: {},
+    internal_note: 'Property question handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('question', 'property_info', reply)
+  });
+}
+
 const isVisitAcceptance =
   !isInNurtureMode &&
   (
@@ -568,62 +641,8 @@ if (isVisitAcceptance) {
     owner_phone: config.escalationPhone,
     memory_updates: memory('visit_acceptance', 'visit', reply)
   });
-}
+} 
     
-const currentStage2 = String(payload.lead_stage || '').toLowerCase();
-
-const isInNurtureMode =
-  currentStage === 'nurture' ||
-  lastIntent === 'soft_close';
-
-const isGreetingOnly =
-  normalizedMsg === 'hola' ||
-  normalizedMsg === 'saludos' ||
-  normalizedMsg === 'buenas' ||
-  normalizedMsg === 'buen dia' ||
-  normalizedMsg === 'buenas tardes' ||
-  normalizedMsg === 'buenas noches';
-
-if (isGreetingOnly) {
-  const reply = '¡Saludos! 👋 ¿Quieres más información de la casa o te gustaría coordinar una visita?';
-
-  return res.json({
-    ok: true,
-    reply_text: reply,
-    status: 'continue',
-    next_step_label: currentStage || 'ask_intent',
-    extracted: {},
-    internal_note: 'Greeting handled',
-    owner_phone: config.escalationPhone,
-    memory_updates: memory('greeting', 'general', reply)
-  });
-}
-
-const isPropertyQuestion =
-  normalizedMsg.includes('agua') ||
-  normalizedMsg.includes('luz') ||
-  normalizedMsg.includes('electricidad') ||
-  normalizedMsg.includes('servicio') ||
-  normalizedMsg.includes('internet') ||
-  normalizedMsg.includes('calle') ||
-  normalizedMsg.includes('asfalto') ||
-  normalizedMsg.includes('titulo') ||
-  normalizedMsg.includes('título');
-
-if (isPropertyQuestion) {
-  const reply = 'Sí 👍 La zona cuenta con agua y luz disponibles.\n\nSi quieres, puedes verla en persona para evaluar mejor todos los detalles.';
-
-  return res.json({
-    ok: true,
-    reply_text: reply,
-    status: 'continue',
-    next_step_label: 'info_provided',
-    extracted: {},
-    internal_note: 'Property question handled',
-    owner_phone: config.escalationPhone,
-    memory_updates: memory('question', 'property_info', reply)
-  });
-}
     // 6. AI RESPONSE
     const input = buildConversationInput(payload);
     const systemPrompt = buildSystemPrompt({
