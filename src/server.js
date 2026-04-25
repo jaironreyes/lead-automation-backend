@@ -115,6 +115,22 @@ app.post('/webhooks/manychat', async (req, res) => {
     const userMsg = String(payload.last_user_message || '').toLowerCase();
     const normalizedMsg = normalizeForMatching(userMsg);
     const lastIntent = String(payload.last_intent || '').toLowerCase();
+    
+    // HANDLE SINGLE "?" WITHOUT REPEATING
+if (userMsg.trim() === '?') {
+  const reply = 'Sí 👍 Estás en un rango más cercano.\n\nLo ideal es verla primero y, si realmente te interesa, se puede conversar una propuesta seria.';
+
+  return res.json({
+    ok: true,
+    reply_text: reply,
+    status: 'continue',
+    next_step_label: 'visit_interest',
+    extracted: {},
+    internal_note: 'Single question mark follow-up handled',
+    owner_phone: config.escalationPhone,
+    memory_updates: memory('price_followup', 'price', reply)
+  });
+}
     // HARD STOP / USER NOT READY (SOFT CLOSE EARLY EXIT)
 const isHardSoftClose =
   normalizedMsg.includes('despues') ||
