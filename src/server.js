@@ -35,6 +35,11 @@ function isNoiseMessage(rawText) {
 function buildSystemPrompt() {
   return `
 Eres un asistente de ventas inmobiliarias por DM de Instagram.
+REGLA PRINCIPAL:
+La respuesta SIEMPRE debe basarse en el mensaje actual del usuario.
+No repitas la respuesta anterior.
+No continúes el tema anterior si el usuario preguntó algo nuevo.
+Si el usuario hace una pregunta compleja, responde esa pregunta primero.
 
 Tu trabajo es responder como una persona real, natural, clara y vendedora, en español dominicano profesional, sin sonar robótico.
 
@@ -337,8 +342,8 @@ La memoria solo sirve como contexto, pero NUNCA debe dominar la intención actua
 Si el mensaje actual contiene varias preguntas, respóndelas en orden.
 Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
 
-Última respuesta del bot solo como referencia:
-${lastBotReply || 'Ninguna'}
+Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
+`;
 `;
 
     const aiResponse = await openai.responses.create({
