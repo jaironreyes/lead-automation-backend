@@ -308,8 +308,6 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
-    let rawMsg = String(body.last_user_message || '');
-
 // 🔥 CLEAN MESSAGE (IMPORTANT)
 let rawMsg = String(body.last_user_message || '');
 
@@ -326,8 +324,10 @@ rawMsg = rawMsg
     const firstName = String(body.first_name || '').trim();
     const lastBotReply = String(body.last_bot_reply || '').trim();
 
-    console.log('RAW MESSAGE:', rawMsg);
-    console.log('NORMALIZED MESSAGE:', normalizedMsg);
+console.log('ORIGINAL MESSAGE:', body.last_user_message);
+console.log('CLEANED MESSAGE:', rawMsg);
+console.log('NORMALIZED MESSAGE:', normalizedMsg);
+console.log('MESSAGE LENGTH:', rawMsg.length);
 
     if (isNoiseMessage(rawMsg)) {
       return res.json({
