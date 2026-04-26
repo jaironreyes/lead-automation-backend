@@ -412,9 +412,9 @@ Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o
   } catch (error) {
     console.error('Webhook error:', error);
 
-    return res.status(500).json({
-      ok: false,
-      reply_text: 'Gracias. Dame un momento y te respondo ahora mismo.',
+return res.json({
+  ok: true,
+  reply_text: 'Entiendo 👍 Son varias preguntas importantes. Te puedo explicar mejor el proceso, los planos, el banco y la forma de compra por WhatsApp 👉 849-207-3914',
       status: 'handoff',
       next_step_label: 'handoff_human',
       extracted: {},
