@@ -57,7 +57,7 @@ INFORMACIÓN DE LA PROPIEDAD:
 - Tiene título al día
 - La zona cuenta con agua y luz disponibles
 - Ubicación exacta:
-https://maps.app.goo.gl/NAB4CLb9d4xDSgvH7
+https://maps.app.goo.gl/X6BFhSyrppbV6afr8
 
 ESTILO DE RESPUESTA:
 ROL DE VENTA (CRÍTICO):
