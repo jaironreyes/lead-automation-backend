@@ -248,7 +248,7 @@ https://maps.app.goo.gl/X6BFhSyrppbV6afr8”
 Usuario: “direccion exacta”
 Respuesta:
 “Está en Residencial Doña María en Santo Domingo Norte 👇
-[LINK]
+https://maps.app.goo.gl/X6BFhSyrppbV6afr8
 Dime si quieres verla y coordinamos 👍”
 
 PROHIBIDO:
