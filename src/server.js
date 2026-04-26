@@ -319,12 +319,22 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
-    const userContext = `
+const userContext = `
 Nombre del usuario: ${firstName || 'No disponible'}
-Mensaje actual del usuario: ${rawMsg}
-Última respuesta del bot: ${lastBotReply || 'Ninguna'}
-Último intent guardado: ${body.last_intent || 'Ninguno'}
-Último contexto guardado: ${body.last_question_context || 'Ninguno'}
+
+MENSAJE ACTUAL DEL USUARIO:
+"${rawMsg}"
+
+INSTRUCCIÓN CRÍTICA:
+Responde únicamente al MENSAJE ACTUAL DEL USUARIO.
+No uses el último intent ni la última respuesta del bot para decidir la respuesta.
+La memoria solo sirve como contexto, pero NUNCA debe dominar la intención actual.
+
+Si el mensaje actual contiene varias preguntas, respóndelas en orden.
+Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
+
+Última respuesta del bot solo como referencia:
+${lastBotReply || 'Ninguna'}
 `;
 
     const aiResponse = await openai.responses.create({
