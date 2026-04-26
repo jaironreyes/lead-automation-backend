@@ -387,7 +387,13 @@ Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o
       };
     }
 
-    const replyText = String(parsed.reply_text || '').trim();
+    let replyText = String(parsed.reply_text || '').trim();
+
+    if (!replyText || replyText.includes('{{cuf_')) {
+    replyText =
+    'Entiendo 👍 son varias preguntas importantes.\n\n' +
+    'Te explico todo eso mejor por WhatsApp para no dejarte dudas 👉 849-207-3914';
+}
 
     return res.json({
       ok: true,
