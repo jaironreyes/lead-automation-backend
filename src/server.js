@@ -328,6 +328,45 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
+const isSeriousBuyerQuestion =
+  normalizedMsg.includes('plano') ||
+  normalizedMsg.includes('planos') ||
+  normalizedMsg.includes('construccion') ||
+  normalizedMsg.includes('construcción') ||
+  normalizedMsg.includes('banco') ||
+  normalizedMsg.includes('financiamiento') ||
+  normalizedMsg.includes('proceso de compra') ||
+  normalizedMsg.includes('seguridad') ||
+  normalizedMsg.includes('fondos') ||
+  normalizedMsg.includes('garantizado');
+
+if (isSeriousBuyerQuestion) {
+  const replyText =
+    'Entiendo perfectamente 👍 y esa es una pregunta seria.\n\n' +
+    'Te explico por partes:\n\n' +
+    '• Planos: sí, se pueden compartir para que los revises.\n' +
+    '• Tiempo de terminación: depende del nivel de acabados que elijas.\n' +
+    '• Compra: debe manejarse con contrato formal y condiciones claras.\n' +
+    '• Banco: habría que validar con la entidad financiera si acepta financiar en esta etapa.\n' +
+    '• Seguridad del dinero: lo correcto es que los pagos se documenten y se manejen por etapas o condiciones acordadas.\n\n' +
+    'Por lo que me preguntas, lo ideal es hablarlo por WhatsApp y enviarte la información completa 👉 849-207-3914';
+
+  return res.json({
+    ok: true,
+    reply_text: replyText,
+    status: 'continue',
+    next_step_label: 'serious_buyer',
+    extracted: {},
+    internal_note: 'Serious buyer complex question handled before AI',
+    owner_phone: config.escalationPhone,
+    memory_updates: {
+      last_intent: 'serious_buyer_question',
+      last_question_context: 'plans_financing_process_security',
+      last_bot_reply: replyText
+    }
+  });
+}
+    
 const userContext = `
 Nombre del usuario: ${firstName || 'No disponible'}
 
