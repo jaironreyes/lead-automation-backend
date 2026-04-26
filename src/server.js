@@ -344,7 +344,6 @@ Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o
 
 Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
 `;
-`;
 
     const aiResponse = await openai.responses.create({
       model: config.openAiModel,
