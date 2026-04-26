@@ -311,10 +311,16 @@ app.post('/webhooks/manychat', async (req, res) => {
     let rawMsg = String(body.last_user_message || '');
 
 // 🔥 CLEAN MESSAGE (IMPORTANT)
+let rawMsg = String(body.last_user_message || '');
+
+// CLEAN COPIED / FORMATTED TEXT
 rawMsg = rawMsg
-  .replace(/\n/g, ' ')       // remove line breaks
-  .replace(/\r/g, ' ')
-  .replace(/\s+/g, ' ')     // normalize spaces
+  .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width hidden chars
+  .replace(/\u00A0/g, ' ')               // non-breaking spaces
+  .replace(/[\r\n\t]+/g, ' ')            // line breaks/tabs
+  .replace(/[“”]/g, '"')                 // smart quotes
+  .replace(/[‘’]/g, "'")
+  .replace(/\s+/g, ' ')
   .trim();
     const normalizedMsg = normalizeText(rawMsg);
     const firstName = String(body.first_name || '').trim();
