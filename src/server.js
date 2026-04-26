@@ -308,7 +308,14 @@ app.post('/webhooks/manychat', async (req, res) => {
       });
     }
 
-    const rawMsg = String(body.last_user_message || '');
+    let rawMsg = String(body.last_user_message || '');
+
+// 🔥 CLEAN MESSAGE (IMPORTANT)
+rawMsg = rawMsg
+  .replace(/\n/g, ' ')       // remove line breaks
+  .replace(/\r/g, ' ')
+  .replace(/\s+/g, ' ')     // normalize spaces
+  .trim();
     const normalizedMsg = normalizeText(rawMsg);
     const firstName = String(body.first_name || '').trim();
     const lastBotReply = String(body.last_bot_reply || '').trim();
