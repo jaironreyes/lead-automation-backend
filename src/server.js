@@ -237,9 +237,13 @@ EJEMPLOS:
 
 Usuario: “mandame la ubicacion”
 Respuesta:
-“Aquí tienes la ubicación exacta 👇
-[LINK]
-Si quieres, podemos coordinar para que la veas 👍”
+“UBICACIÓN (CRÍTICO):
+
+Cuando el usuario pida ubicación, dirección o location:
+- SIEMPRE debes enviar el enlace real de Google Maps.
+- NUNCA uses “[LINK]” ni placeholders.
+- El enlace exacto es:
+https://maps.app.goo.gl/X6BFhSyrppbV6afr8”
 
 Usuario: “direccion exacta”
 Respuesta:
