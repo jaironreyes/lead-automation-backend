@@ -86,7 +86,7 @@ function detectBehaviorSignals(rawText) {
   return {
     askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
     askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
-    askedVisit: /\b(visita|ver la propiedad en persona|verla en persona|ir a verla|coordinar visita|agendar|cita|schedule visit|schedule a visit|visit in person|when can i see it in person|can i go see it)\b/i.test(msg)
+    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg)
   };
 }
 
@@ -264,6 +264,31 @@ Correct English:
 Correct Spanish:
 "[SEND_LAYOUT] Esta es la distribución 👍 Dime si te funciona este diseño."
 
+AFTER POSITIVE LAYOUT REACTION:
+
+If the user says:
+- looks good
+- it works
+- I like it
+- yes
+- ok
+- me gusta
+- se ve bien
+- me funciona
+
+Then:
+- Reply positively
+- Ask if they want to schedule a visit
+- But lead_stage must remain "Property Sent" unless the user clearly agrees to visit or gives a day/time.
+
+Correct:
+"Great 👍 Would you like to schedule a visit to see it in person?"
+
+lead_stage:
+"Property Sent"
+
+Only use "Visit Scheduled" if the user clearly accepts the visit or gives a date/time.
+
 OBJECTON HANDLING:
 If the user says they are busy or want to see information before visiting:
 - Respect that.
@@ -302,7 +327,7 @@ Rules:
 - General interest → Interested
 - Price / bank / financing / loan / budget → Budget Qualified
 - Location / details / layout / property info → Property Sent
-- Real in-person visit intent → Visit Scheduled
+- User clearly agrees to visit or gives day/time → Visit Scheduled
 - Offer / discount / negotiation → Negotiation
 
 OUTPUT FORMAT:
