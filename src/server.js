@@ -318,12 +318,6 @@ app.post('/webhooks/manychat', async (req, res) => {
       };
     }
 
-    // 🔥 READ VALUES FROM MANYCHAT
-const messageCount = Number(body.message_count || 0);
-const priceQuestionCount = Number(body.price_question_count || 0);
-const financingQuestionCount = Number(body.financing_question_count || 0);
-const visitQuestionCount = Number(body.visit_question_count || 0);
-
 // 🔥 DETECT CURRENT MESSAGE SIGNALS
 const signals = detectBehaviorSignals(rawMsg);
 
