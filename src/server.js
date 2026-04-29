@@ -608,7 +608,8 @@ Return ONLY valid JSON:
 app.post('/webhooks/manychat', async (req, res) => {
   try {
     const body = req.body || {};
-
+    const previousBotReply = body.ai_reply || '';
+    
     if (body.secret !== config.webhookSecret) {
       return res.status(401).json({ error: 'Invalid secret' });
     }
@@ -639,7 +640,15 @@ app.post('/webhooks/manychat', async (req, res) => {
           content: [
             {
               type: 'input_text',
-              text: `Nombre: ${firstName}\nMensaje: ${rawMsg}`
+              text: `
+Nombre: ${firstName}
+
+Mensaje anterior del bot:
+"${previousBotReply}"
+
+Mensaje actual del usuario:
+"${rawMsg}"
+`
             }
           ]
         }
