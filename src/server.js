@@ -90,9 +90,9 @@ function detectBehaviorSignals(rawText) {
 
     askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
 
-    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
+    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|mañana|tarde|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
-    confirmedVisit: /\b(yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
+    confirmedVisit: /\b(sure|yes|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
 
     askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
 
@@ -144,7 +144,7 @@ if (signals.askedNegotiation) {
 } else if (signals.askedVisit || signals.confirmedVisit) {
   finalStage = 'Visit Scheduled';
 
-} else if (signals.askedFinancing || signals.askedPrice || financingQuestionCount >= 1 || priceQuestionCount >= 1) {
+} else if (signals.askedFinancing || signals.askedPrice) {
   finalStage = 'Budget Qualified';
 
 } else if (signals.askedPropertyInfo || signals.askedDetails) {
