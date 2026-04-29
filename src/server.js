@@ -86,18 +86,7 @@ function detectBehaviorSignals(rawText) {
   return {
     askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
     askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
-    askedVisit: /\b(
-  visita|
-  ver (la )?propiedad en persona|
-  ir a verla|
-  coordinar visita|
-  agendar|
-  cita|
-  schedule( a)? visit|
-  visit in person|
-  when can i see it in person|
-  can i go see it
-)\b/i.test(msg)
+    askedVisit: /\b(visita|ver la propiedad en persona|verla en persona|ir a verla|coordinar visita|agendar|cita|schedule visit|schedule a visit|visit in person|when can i see it in person|can i go see it)\b/i.test(msg)
   };
 }
 
@@ -112,6 +101,11 @@ function determineHybridLeadStage({
 }) {
   const signals = detectBehaviorSignals(rawMsg);
 
+  // Prevent false positives like "see layout"
+  if (/layout|plano|distribucion|distribución|distribution/.test(normalizeText(rawMsg))) {
+  signals.askedVisit = false;
+}
+  
   const stageRank = {
     'New Lead': 1,
     'Interested': 2,
