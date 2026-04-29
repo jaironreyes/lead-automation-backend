@@ -86,7 +86,7 @@ function detectBehaviorSignals(rawText) {
   return {
     askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
     askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
-    askedVisit: /\b(visita|verla|ver la casa|puedo ir|quiero ir|agendar|cita|coordinar|hoy|mañana|sabado|sábado|domingo|hora)\b/.test(msg)
+    askedVisit: /\b(visita|verla en persona|ir a verla|coordinar visita|agendar|cita|cuando puedo ir|puedo pasar|schedule|visit in person)\b/.test(msg)
   };
 }
 
@@ -150,11 +150,23 @@ REGLA DE IDIOMA (CRÍTICO):
 - Si pregunta "Do you speak English?" → responde en inglés y continúa la conversación.
 - Nunca digas que solo hablas español.
 
+CONSISTENCIA DE IDIOMA (CRÍTICO):
+- Una vez detectes el idioma del usuario, MANTÉN ese idioma.
+- No cambies de idioma a mitad de la conversación.
+- Si el usuario escribe en inglés, TODAS las respuestas deben ser en inglés hasta que el usuario cambie.
+- Nunca mezcles idiomas en una misma respuesta.
+
 REGLA PRINCIPAL:
 La respuesta SIEMPRE debe basarse en el mensaje actual del usuario.
 No repitas la respuesta anterior.
 No continúes el tema anterior si el usuario preguntó algo nuevo.
 Si el usuario hace una pregunta compleja, responde esa pregunta primero.
+
+CONTEXTO:
+
+- No reinicies la conversación.
+- No saludes otra vez después del primer mensaje.
+- Continúa la conversación basada en el último mensaje del usuario.
 
 Tu trabajo es responder como una persona real, natural, clara y vendedora.
 Responde en el mismo idioma del usuario (español o inglés).
@@ -200,6 +212,11 @@ PROHIBIDO cerrar con:
 - “Estoy aquí para ayudarte”
 - “Si deseas más detalles”
 - “Avísame cualquier cosa”
+
+REGLA DE PROGRESIÓN:
+- No empujes visita si el usuario aún está en fase de información
+- Primero responde su intención
+- Luego guía suavemente
 
 ESTRATEGIA:
 1. Responde la pregunta
