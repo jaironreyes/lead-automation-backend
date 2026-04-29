@@ -75,6 +75,68 @@ function detectStageFallback(msg, prevStage) {
   return prevStage || 'New Lead';
 }
 
+function toNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function detectBehaviorSignals(rawText) {
+  const msg = normalizeText(rawText);
+
+  return {
+    askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
+    askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
+    askedVisit: /\b(visita|verla|ver la casa|puedo ir|quiero ir|agendar|cita|coordinar|hoy|mañana|sabado|sábado|domingo|hora)\b/.test(msg)
+  };
+}
+
+function determineHybridLeadStage({
+  aiStage,
+  previousStage,
+  rawMsg,
+  messageCount,
+  priceQuestionCount,
+  financingQuestionCount,
+  visitQuestionCount
+}) {
+  const signals = detectBehaviorSignals(rawMsg);
+
+  const stageRank = {
+    'New Lead': 1,
+    'Interested': 2,
+    'Property Sent': 3,
+    'Budget Qualified': 4,
+    'Negotiation': 5,
+    'Visit Scheduled': 6,
+    'Visited': 7
+  };
+
+  let finalStage = normalizeLeadStage(aiStage || previousStage);
+
+  if (signals.askedVisit || visitQuestionCount >= 1) {
+    finalStage = 'Visit Scheduled';
+  } else if (signals.askedFinancing || financingQuestionCount >= 1) {
+    finalStage = 'Budget Qualified';
+  } else if (signals.askedPrice && priceQuestionCount >= 2) {
+    finalStage = 'Budget Qualified';
+  } else if (signals.askedPrice) {
+    finalStage = 'Budget Qualified';
+  } else if (messageCount >= 4 && finalStage === 'New Lead') {
+    finalStage = 'Interested';
+  } else if (messageCount >= 6 && finalStage === 'Interested') {
+    finalStage = 'Budget Qualified';
+  }
+
+  const previous = normalizeLeadStage(previousStage);
+
+  // Prevent going backwards unless the old stage was empty/new.
+  if (stageRank[previous] > stageRank[finalStage]) {
+    return previous;
+  }
+
+  return finalStage;
+}
+
 /* ---------------- AI PROMPT ---------------- */
 
 function buildSystemPrompt() {
@@ -189,20 +251,48 @@ app.post('/webhooks/manychat', async (req, res) => {
       };
     }
 
-    const finalStage = normalizeStage(parsed.lead_stage);
+    // 🔥 READ VALUES FROM MANYCHAT
+const messageCount = Number(body.message_count || 0);
+const priceQuestionCount = Number(body.price_question_count || 0);
+const financingQuestionCount = Number(body.financing_question_count || 0);
+const visitQuestionCount = Number(body.visit_question_count || 0);
 
-    return res.json({
-      ok: true,
-      reply_text: parsed.reply_text,
-      status: parsed.status || 'continue',
-      next_step_label: parsed.next_step_label || 'info_requested',
+// 🔥 DETECT CURRENT MESSAGE SIGNALS
+const signals = detectBehaviorSignals(rawMsg);
 
-      lead_stage: finalStage,
+// 🔥 UPDATE COUNTERS
+const updatedMessageCount = messageCount + 1;
+const updatedPriceQuestionCount = priceQuestionCount + (signals.askedPrice ? 1 : 0);
+const updatedFinancingQuestionCount = financingQuestionCount + (signals.askedFinancing ? 1 : 0);
+const updatedVisitQuestionCount = visitQuestionCount + (signals.askedVisit ? 1 : 0);
 
-      extracted: {
-        lead_stage: finalStage
-      }
-    });
+// 🔥 HYBRID LOGIC (AI + BEHAVIOR)
+const finalStage = determineHybridLeadStage({
+  aiStage: parsed.lead_stage,
+  previousStage: body.lead_stage,
+  rawMsg,
+  messageCount: updatedMessageCount,
+  priceQuestionCount: updatedPriceQuestionCount,
+  financingQuestionCount: updatedFinancingQuestionCount,
+  visitQuestionCount: updatedVisitQuestionCount
+});
+
+   return res.json({
+  ok: true,
+  reply_text: parsed.reply_text,
+  status: parsed.status || 'continue',
+  next_step_label: parsed.next_step_label || 'info_requested',
+
+  lead_stage: finalStage,
+
+  extracted: {
+    lead_stage: finalStage,
+    message_count: updatedMessageCount,
+    price_question_count: updatedPriceQuestionCount,
+    financing_question_count: updatedFinancingQuestionCount,
+    visit_question_count: updatedVisitQuestionCount
+  }
+});
   } catch (err) {
     console.error(err);
 
