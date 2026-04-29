@@ -105,6 +105,10 @@ function detectBehaviorSignals(rawText) {
     gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
 
     gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
+    
+    agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
+
+    askedWhatsapp: /\b(whatsapp|number|phone|contacto|numero|número)\b/i.test(msg),
   };
 }
 
@@ -141,6 +145,9 @@ function determineHybridLeadStage({
 
 if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
+
+} else if (signals.askedWhatsapp || signals.agreedToNextStep) {
+  finalStage = 'Negotiation'; // or keep Visit Scheduled if you prefer
 
 } else if (
   signals.gaveSchedulingTime ||
@@ -203,6 +210,31 @@ CONVERSATION CONTROL:
 - Do not ask generic questions like “How can I help you?”
 - Continue from the user's latest intent.
 - Do not ask something the user already answered.
+
+CONTEXT MEMORY (CRITICAL):
+
+Always interpret the user's message together with the immediate previous conversation.
+
+Do NOT treat each message independently.
+
+If the user:
+- agrees ("let's do that", "ok", "perfect")
+- answers briefly ("tomorrow", "5:30 PM", "right now")
+- refers to something ("that", "it")
+
+Then:
+- Use the previous bot message to understand what they mean
+- Continue that same flow
+- Do NOT reset the conversation
+- Do NOT ask unrelated questions
+
+Incorrect:
+User: "Right now"
+Bot: "Could you clarify what you're interested in?"
+
+Correct:
+User: "Right now"
+Bot: "Perfect 👍 you can message me here: 849-207-3914"
 
 STYLE:
 - Short DM style.
@@ -511,6 +543,27 @@ IMPORTANT:
 Then:
 lead_stage = "Visit Scheduled"
 
+WHATSAPP / ACTION CONTEXT (CRÍTICO):
+
+If the user agrees to a previous suggestion ("let's do that", "ok", "perfect"):
+- Continue the previous action
+- Do NOT change topic
+- Do NOT ask new unrelated questions
+
+If the user asks for WhatsApp, phone, or contact:
+- Immediately provide the number
+- Do NOT ask anything else first
+
+If the user says "right now":
+- Treat it as urgency
+- Move forward with the current action
+
+Incorrect:
+"What day works best for you?"
+"Could you clarify what you're interested in?"
+
+Correct:
+"Perfect 👍 you can message me here: 849-207-3914"
 ---
 
 6. NEGOTIATION (PRICE PUSHING)
@@ -534,6 +587,9 @@ RULES:
 - NEVER downgrade stages
 - If unclear → keep previous stage
 - Always prioritize strongest intent
+- If the user is continuing a previous step (visit, WhatsApp, negotiation),
+  DO NOT reclassify the stage based only on the last message.
+  Maintain or upgrade the stage.
 
 OUTPUT FORMAT:
 Return ONLY valid JSON:
