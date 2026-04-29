@@ -334,7 +334,7 @@ const updatedFinancingQuestionCount = financingQuestionCount + (signals.askedFin
 const updatedVisitQuestionCount = visitQuestionCount + (signals.askedVisit ? 1 : 0);
 
 // 🔥 HYBRID LOGIC (AI + BEHAVIOR)
-const previous = normalizeStage(previousStage);
+const finalStage = determineHybridLeadStage({
   aiStage: parsed.lead_stage,
   previousStage: body.lead_stage,
   rawMsg,
