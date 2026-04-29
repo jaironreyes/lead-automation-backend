@@ -318,14 +318,20 @@ app.post('/webhooks/manychat', async (req, res) => {
       };
     }
 
-// 🔥 DETECT CURRENT MESSAGE SIGNALS
-const signals = detectBehaviorSignals(rawMsg);
-
-// 🔥 UPDATE COUNTERS
+// 🔥 READ VALUES FROM MANYCHAT
 const messageCount = toNumber(body.message_count);
 const priceQuestionCount = toNumber(body.price_question_count);
 const financingQuestionCount = toNumber(body.financing_question_count);
 const visitQuestionCount = toNumber(body.visit_question_count);
+
+// 🔥 DETECT CURRENT MESSAGE SIGNALS
+const signals = detectBehaviorSignals(rawMsg);
+
+// 🔥 UPDATE COUNTERS
+const updatedMessageCount = messageCount + 1;
+const updatedPriceQuestionCount = priceQuestionCount + (signals.askedPrice ? 1 : 0);
+const updatedFinancingQuestionCount = financingQuestionCount + (signals.askedFinancing ? 1 : 0);
+const updatedVisitQuestionCount = visitQuestionCount + (signals.askedVisit ? 1 : 0);
 
 // 🔥 HYBRID LOGIC (AI + BEHAVIOR)
 const previous = normalizeStage(previousStage);
