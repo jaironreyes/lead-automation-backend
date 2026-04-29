@@ -90,7 +90,7 @@ return {
 
   askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
-  confirmedVisit: /\b(yes|sure|ok|yeah|i said yes|claro|si|sí)\b/i.test(msg)
+  confirmedVisit: /\b(i want to visit|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg)
 };
 }
 
@@ -130,7 +130,7 @@ if (signals.askedNegotiation) {
 } else if (signals.askedVisit) {
   finalStage = 'Visit Scheduled';
 
-} else if (signals.confirmedVisit && previousStage === 'Property Sent') {
+} else if (signals.confirmedVisit) {
   finalStage = 'Visit Scheduled';
 
 } else if (signals.askedFinancing || financingQuestionCount >= 1) {
