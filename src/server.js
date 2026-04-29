@@ -11,6 +11,8 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'lead-automation-backend' });
 });
 
+/* ---------------- CLEANING ---------------- */
+
 function normalizeText(text) {
   return String(text || '')
     .toLowerCase()
@@ -19,350 +21,145 @@ function normalizeText(text) {
     .trim();
 }
 
-function isNoiseMessage(rawText) {
-  const raw = String(rawText || '').trim().toLowerCase();
-
-  return (
-    raw === '' ||
-    raw === '?' ||
-    raw === '.' ||
-    raw === '¿' ||
-    raw === '!' ||
-    raw === '¡'
-  );
+function cleanIncomingMessage(text) {
+  return String(text || '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
+
+function isNoiseMessage(text) {
+  const raw = String(text || '').trim().toLowerCase();
+  return raw === '' || raw === '?' || raw === '.' || raw === '¿' || raw === '!';
+}
+
+/* ---------------- LEAD STAGES ---------------- */
+
+const VALID_STAGES = [
+  'New Lead',
+  'Interested',
+  'Budget Qualified',
+  'Property Sent',
+  'Visit Scheduled',
+  'Visited',
+  'Negotiation'
+];
+
+function normalizeStage(stage) {
+  const found = VALID_STAGES.find(
+    s => s.toLowerCase() === String(stage || '').toLowerCase()
+  );
+  return found || 'New Lead';
+}
+
+function detectStageFallback(msg, prevStage) {
+  const text = normalizeText(msg);
+
+  if (/rebaja|oferta|negociar|descuento/.test(text)) return 'Negotiation';
+
+  if (/visita|verla|ir|agendar|hora|mañana|hoy/.test(text))
+    return 'Visit Scheduled';
+
+  if (/precio|cuanto|banco|prestamo|financiamiento/.test(text))
+    return 'Budget Qualified';
+
+  if (/ubicacion|direccion|mapa|detalles|fotos|video/.test(text))
+    return 'Property Sent';
+
+  if (/interesa|info|disponible/.test(text)) return 'Interested';
+
+  return prevStage || 'New Lead';
+}
+
+/* ---------------- AI PROMPT ---------------- */
 
 function buildSystemPrompt() {
   return `
-Eres un asistente de ventas inmobiliarias por DM de Instagram.
-REGLA PRINCIPAL:
-La respuesta SIEMPRE debe basarse en el mensaje actual del usuario.
-No repitas la respuesta anterior.
-No continúes el tema anterior si el usuario preguntó algo nuevo.
-Si el usuario hace una pregunta compleja, responde esa pregunta primero.
+Eres un vendedor inmobiliario por Instagram DM.
 
-Tu trabajo es responder como una persona real, natural, clara y vendedora, en español dominicano profesional, sin sonar robótico.
-
-INFORMACIÓN DE LA PROPIEDAD:
-- Tipo: Casa de un nivel
-- Condición: Obra gris
-- Ubicación: Residencial Doña María, Santo Domingo Norte
-- Precio: RD$4.5 millones
-- Habitaciones: 3
-- Baños: 2
-- Solar: 168 metros cuadrados
-- Construcción: 100 metros cuadrados
-- Beneficios: patio, cisterna, proyecto cerrado
-- Amenidades: piscina comunitaria
-- Tiene título al día
-- La zona cuenta con agua y luz disponibles
-- Ubicación exacta:
-https://maps.app.goo.gl/X6BFhSyrppbV6afr8
-
-ESTILO DE RESPUESTA:
-ROL DE VENTA (CRÍTICO):
-
-No eres un asistente. Eres un vendedor inmobiliario de alto rendimiento.
-
-Tu objetivo NO es responder preguntas.
-Tu objetivo es llevar al usuario a una VISITA o a WhatsApp.
-
-FORMA DE ACTUAR:
-
-- Siempre responde y luego dirige la conversación.
-- Nunca te quedes en información pasiva.
-- Cada respuesta debe avanzar un paso.
-
-ESTRATEGIA:
-
-1. Responde la pregunta
-2. Refuerza valor
-3. Empuja acción (suave pero constante)
-
-EJEMPLOS:
-
-Precio:
-“Está en RD$4.5M 👍 por el potencial que tiene es una muy buena oportunidad.
-Si quieres, puedes verla y así evalúas si te conviene.”
-
-Ubicación:
-“Está en Residencial Doña María en Santo Domingo Norte 👍
-Si quieres, te puedo coordinar para que la veas.”
-
-Interés:
-“Perfecto 👍 lo ideal es verla en persona.
-Dime qué día te queda mejor o escríbeme por WhatsApp 👉 849-207-3914”
-
-COMPORTAMIENTO:
-
-- Habla como humano, no como bot
-- Sé seguro, directo, sin sonar agresivo
-- No preguntes demasiado — guía
-- No pierdas el control de la conversación
-
-REGLA DE ORO:
-
-Cada mensaje debe acercar al usuario a:
-→ ver la propiedad
-→ o moverse a WhatsApp
-VENTA (MUY IMPORTANTE):
-- No solo respondas — guía la conversación hacia una visita.
-- Cada respuesta debe empujar ligeramente a ver la propiedad.
-- Evita respuestas neutrales — siempre dirige.
-- Usa micro-CTA en casi todas las respuestas.
-WHATSAPP (CONVERSIÓN):
-- Puedes ofrecer contacto por WhatsApp cuando el usuario:
-  • muestra interés
-  • hace varias preguntas
-  • pregunta por visita
-  • pide más detalles
-- Introduce WhatsApp de forma natural, no forzada.
-- No lo menciones en cada mensaje.
-- Usa frases como:
-
-  “Si quieres, te paso más detalles por WhatsApp 👉 849-207-3914”
-  “Escríbeme por WhatsApp y coordinamos mejor 👉 849-207-3914”
-  “Por WhatsApp te explico todo más rápido 👉 849-207-3914”
-
-- Usa WhatsApp como paso natural para avanzar la conversación, no como spam.
-
-Ejemplos:
-- Precio → menciona valor + sugiere verla
-- Ubicación → da ubicación + invita a visitarla
-- Título → responde + refuerza confianza + empuja acción
-- Interés → mueve directo a agendar
-
-PRECIO Y NEGOCIACIÓN (CRÍTICO):
-
-- Precio publicado: RD$4.5 millones
-- Precio mínimo posible: RD$4.3 millones
-
-REGLAS:
-
-- NUNCA ofrezcas RD$4.3 de inmediato.
-- SIEMPRE empieza defendiendo el valor en RD$4.5M.
-- Solo menciona flexibilidad si el cliente:
-  • insiste
-  • hace una oferta
-  • muestra interés real
-
-FORMA DE RESPONDER:
-
-1. Defiende valor primero
-2. Luego abre puerta (sin dar número)
-3. Solo en caso fuerte → sugiere que puede acercarse
-
-EJEMPLOS:
-
-Si preguntan precio:
-“Está en RD$4.5M 👍 por el potencial que tiene está bastante bien ubicado.
-Si la ves, puedes evaluar mejor si te conviene.”
-
-Si preguntan rebaja:
-“El precio está bastante ajustado por el tipo de propiedad 👍
-pero si realmente te interesa, se puede conversar.”
-
-Si hacen oferta (ej: 4M):
-“Entiendo 👍 pero por ese rango se queda fuera.
-Si te interesa de verdad, se puede acercar un poco más, pero lo ideal es verla primero.”
-OBJECIONES Y COMPRADORES SERIOS (CRÍTICO):
-
-Si el usuario hace preguntas complejas sobre:
-- planos
-- tiempo de construcción
-- proceso de compra
-- financiamiento
-- seguridad del dinero
-
-ENTONCES:
-
-1. RESPONDE sus dudas primero (de forma clara y simple)
-2. DA confianza (explica cómo se maneja el proceso)
-3. LUEGO guía a siguiente paso (no empujes visita directo)
-
-FORMA DE RESPONDER:
-
-- Sé claro, organizado y profesional
-- No ignores preguntas
-- No repitas respuestas genéricas
-- Divide la respuesta en partes si es necesario
-
-EJEMPLO:
-
-“Entiendo 👍 te explico rápido:
-
-• Planos: te los puedo compartir sin problema
-• Tiempo de construcción: depende de los acabados, pero normalmente toma X tiempo
-• Proceso de compra: se hace con contrato formal, donde se establecen etapas
-• Seguridad: los pagos se manejan por etapas de avance, no se entrega todo de una vez
-
-Si quieres, te explico todo más detallado por WhatsApp y te envío los planos 👉 849-207-3914”
-
-REGLA:
-
-- Cuando el usuario es serio → baja presión, sube claridad
-- Cuando el usuario es casual → sube empuje
-COMPORTAMIENTO:
-
-- Nunca negocies sin interés real
-- Nunca bajes el precio sin contexto
-- Usa el precio como herramienta para empujar la visita
-
-DETECCIÓN DE INTENCIÓN (CRÍTICO):
-
-Antes de responder, identifica EXACTAMENTE qué está pidiendo el usuario.
-
-PRIORIDAD DE INTENCIÓN:
-
-PRIORIDAD DE INTENCIÓN:
-
-1. Comprador serio / preguntas complejas → responder sus dudas primero
-2. Ubicación / dirección → responder SOLO con ubicación
-3. Precio → responder SOLO precio + valor
-4. Ubicación / dirección → responder SOLO con ubicación
-5. Título → responder SOLO título
-6. Luz / agua → responder SOLO servicios
-7. Rebaja → manejar negociación
-8. Interés → mover a visita
-9. Saludo → saludo corto
-10. General → detalles
-
-REGLAS:
-
-- NO repitas todos los detalles si no los están pidiendo
-- RESPONDE SOLO lo que el usuario pidió
-- Luego puedes agregar una línea para avanzar la conversación
-
-EJEMPLOS:
-
-Usuario: “mandame la ubicacion”
-Respuesta:
-“UBICACIÓN (CRÍTICO):
-
-Cuando el usuario pida ubicación, dirección o location:
-- SIEMPRE debes enviar el enlace real de Google Maps.
-- NUNCA uses “[LINK]” ni placeholders.
-- El enlace exacto es:
-https://maps.app.goo.gl/X6BFhSyrppbV6afr8”
-
-Usuario: “direccion exacta”
-Respuesta:
-“Está en Residencial Doña María en Santo Domingo Norte 👇
-https://maps.app.goo.gl/X6BFhSyrppbV6afr8
-Dime si quieres verla y coordinamos 👍”
-
-PROHIBIDO:
-
-❌ Responder con todos los detalles cuando piden algo específico
-❌ Ignorar la intención principal
-
-COMPORTAMIENTO:
-- No te quedes en “informar”
-- Siempre busca avanzar la conversación
-- Habla como alguien que quiere cerrar, no como soporte
-- Responde corto, como DM real.
-- No escribas párrafos largos.
-- Usa tono cercano, dominicano, profesional y vendedor.
-- No inventes información que no esté aquí.
-- Si no sabes algo, responde con honestidad y ofrece coordinar con el encargado.
-- No repitas la misma respuesta si el usuario cambia de tema.
-- Si el usuario pregunta precio, responde el precio.
-- Si pregunta ubicación, da la ubicación.
-- Si pregunta título, responde que sí tiene título al día.
-- Si pregunta agua o luz, responde que la propiedad cuenta con acceso a agua y luz.
-- Si pregunta por rebaja, no aceptes una rebaja directa. Di que el precio está ajustado, pero que si la ve y tiene una propuesta seria se puede conversar.
-- Si muestra interés en visitar, pregunta qué día y hora le conviene.
-- Si da día/hora, confirma y di que se coordinarán los detalles.
-- Si dice “después”, “ahora no”, “más adelante”, responde sin presionar.
-- Si solo saluda, responde saludando y pregunta qué desea saber.
-- Si el usuario manda un mensaje confuso, pide aclaración breve.
+Responde como humano, dominicano, directo.
 
 OBJETIVO:
-Llevar al usuario naturalmente a visitar la propiedad, pero sin presionar demasiado.
+Llevar al usuario a visita o WhatsApp.
 
-FORMATO DE SALIDA:
-Devuelve SOLO JSON válido con esta estructura exacta:
+PRECIO:
+RD$4.5M (mínimo 4.3M, no ofrecer de inmediato)
+
+WHATSAPP:
+849-207-3914
+
+REGLAS:
+- Responde SOLO lo que preguntan
+- Luego empuja suavemente a acción
+- No párrafos largos
+
+LEAD_STAGE (CRÍTICO):
+
+Devuelve uno de estos EXACTAMENTE:
+
+New Lead
+Interested
+Budget Qualified
+Property Sent
+Visit Scheduled
+Visited
+Negotiation
+
+REGLAS:
+
+- Saludo → New Lead
+- Interés → Interested
+- Precio/banco → Budget Qualified
+- Ubicación/detalles → Property Sent
+- Visita → Visit Scheduled
+- Negociación → Negotiation
+
+FORMATO:
 
 {
-  "reply_text": "respuesta al usuario",
+  "reply_text": "texto",
   "status": "continue",
   "next_step_label": "info_requested",
-  "internal_note": "breve nota interna",
+  "lead_stage": "Interested",
+  "internal_note": "nota",
   "memory_updates": {
-    "last_intent": "intent_detected",
-    "last_question_context": "context_detected",
-    "last_bot_reply": "same as reply_text"
+    "last_intent": "intent",
+    "last_question_context": "context",
+    "last_bot_reply": "texto"
   }
 }
 `;
 }
+
+/* ---------------- WEBHOOK ---------------- */
 
 app.post('/webhooks/manychat', async (req, res) => {
   try {
     const body = req.body || {};
 
     if (body.secret !== config.webhookSecret) {
-      return res.status(401).json({
-        ok: false,
-        error: 'Invalid secret.'
-      });
+      return res.status(401).json({ error: 'Invalid secret' });
     }
 
-// 🔥 CLEAN MESSAGE (IMPORTANT)
-let rawMsg = String(body.last_user_message || '');
-
-// CLEAN COPIED / FORMATTED TEXT
-rawMsg = rawMsg
-  .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width hidden chars
-  .replace(/\u00A0/g, ' ')               // non-breaking spaces
-  .replace(/[\r\n\t]+/g, ' ')            // line breaks/tabs
-  .replace(/[“”]/g, '"')                 // smart quotes
-  .replace(/[‘’]/g, "'")
-  .replace(/\s+/g, ' ')
-  .trim();
-    const normalizedMsg = normalizeText(rawMsg);
-    const firstName = String(body.first_name || '').trim();
-    const lastBotReply = String(body.last_bot_reply || '').trim();
-
-console.log('ORIGINAL MESSAGE:', body.last_user_message);
-console.log('CLEANED MESSAGE:', rawMsg);
-console.log('NORMALIZED MESSAGE:', normalizedMsg);
-console.log('MESSAGE LENGTH:', rawMsg.length);
+    const rawMsg = cleanIncomingMessage(body.last_user_message);
+    const firstName = body.first_name || '';
+    const prevStage = normalizeStage(body.lead_stage);
 
     if (isNoiseMessage(rawMsg)) {
       return res.json({
         ok: true,
         reply_text: '',
         status: 'silent',
-        next_step_label: 'none',
-        extracted: {},
-        internal_note: 'Noise ignored',
-        memory_updates: {
-          last_intent: String(body.last_intent || ''),
-          last_question_context: String(body.last_question_context || ''),
-          last_bot_reply: lastBotReply
-        }
+        lead_stage: prevStage,
+        extracted: { lead_stage: prevStage }
       });
     }
-    
-const userContext = `
-Nombre del usuario: ${firstName || 'No disponible'}
 
-MENSAJE ACTUAL DEL USUARIO:
-"${rawMsg}"
-
-INSTRUCCIÓN CRÍTICA:
-Responde únicamente al MENSAJE ACTUAL DEL USUARIO.
-No uses el último intent ni la última respuesta del bot para decidir la respuesta.
-La memoria solo sirve como contexto, pero NUNCA debe dominar la intención actual.
-
-Si el mensaje actual contiene varias preguntas, respóndelas en orden.
-Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
-
-Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o seguridad del dinero, responde esas dudas primero antes de intentar cerrar visita o WhatsApp.
-`;
-
-    const aiResponse = await openai.responses.create({
+    const ai = await openai.responses.create({
       model: config.openAiModel,
       input: [
         {
@@ -371,71 +168,53 @@ Si el usuario hace preguntas serias sobre planos, construcción, banco, compra o
         },
         {
           role: 'user',
-          content: [{ type: 'input_text', text: userContext }]
+          content: [
+            {
+              type: 'input_text',
+              text: `Nombre: ${firstName}\nMensaje: ${rawMsg}`
+            }
+          ]
         }
       ]
     });
 
-    const rawText = aiResponse.output_text?.trim();
-
-    if (!rawText) {
-      throw new Error('No AI response returned.');
-    }
-
     let parsed;
 
     try {
-      parsed = JSON.parse(rawText);
+      parsed = JSON.parse(ai.output_text);
     } catch {
       parsed = {
-        reply_text: rawText,
-        status: 'continue',
-        next_step_label: 'info_requested',
-        internal_note: 'AI returned plain text',
-        memory_updates: {
-          last_intent: 'general',
-          last_question_context: 'general',
-          last_bot_reply: rawText
-        }
+        reply_text: ai.output_text,
+        lead_stage: detectStageFallback(rawMsg, prevStage)
       };
     }
 
-    let replyText = String(parsed.reply_text || '').trim();
-
-    if (!replyText || replyText.includes('{{cuf_')) {
-    replyText =
-    'Entiendo 👍 son varias preguntas importantes.\n\n' +
-    'Te explico todo eso mejor por WhatsApp para no dejarte dudas 👉 849-207-3914';
-}
+    const finalStage = normalizeStage(parsed.lead_stage);
 
     return res.json({
       ok: true,
-      reply_text: replyText,
+      reply_text: parsed.reply_text,
       status: parsed.status || 'continue',
       next_step_label: parsed.next_step_label || 'info_requested',
-      extracted: {},
-      internal_note: parsed.internal_note || 'AI handled response',
-      owner_phone: config.escalationPhone,
-      memory_updates: {
-        last_intent: parsed.memory_updates?.last_intent || 'general',
-        last_question_context: parsed.memory_updates?.last_question_context || 'general',
-        last_bot_reply: replyText
+
+      lead_stage: finalStage,
+
+      extracted: {
+        lead_stage: finalStage
       }
     });
-  } catch (error) {
-    console.error('Webhook error:', error);
+  } catch (err) {
+    console.error(err);
 
-return res.json({
-  ok: true,
-  reply_text: 'Entiendo 👍 Son varias preguntas importantes. Te puedo explicar mejor el proceso, los planos, el banco y la forma de compra por WhatsApp 👉 849-207-3914',
-      status: 'handoff',
-      next_step_label: 'handoff_human',
-      extracted: {},
-      internal_note: error instanceof Error ? error.message : 'Unknown error'
+    return res.json({
+      ok: true,
+      reply_text: 'Escríbeme por WhatsApp 👉 849-207-3914',
+      lead_stage: 'Interested',
+      extracted: { lead_stage: 'Interested' }
     });
   }
 });
 
 app.listen(config.port, () => {
-  console.log(`Lead automation backend listening on port ${config.port}`);
+  console.log('Server running...');
 });
