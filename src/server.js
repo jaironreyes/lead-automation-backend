@@ -83,19 +83,25 @@ function toNumber(value) {
 function detectBehaviorSignals(rawText) {
   const msg = normalizeText(rawText);
 
-return {
-  askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/i.test(msg),
+  return {
+    askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|4\.1|4\.3|millones)\b/i.test(msg),
 
-  askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/i.test(msg),
+    askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta|price|how much)\b/i.test(msg),
 
-  askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
+    askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
 
-  confirmedVisit: /\b(i want to visit|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
+    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
-  askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
+    confirmedVisit: /\b(yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
 
-  askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg)
-};
+    askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
+
+    askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación)\b/i.test(msg),
+
+    askedGeneralInterest: /\b(interested|i am interested|i want info|tell me more|me interesa|quiero informacion|quiero información|quiero saber más|mas informacion|más información)\b/i.test(msg),
+
+    askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg)
+  };
 }
 
 function determineHybridLeadStage({
@@ -127,29 +133,28 @@ function determineHybridLeadStage({
   let finalStage = normalizeStage(aiStage || previousStage);
 
 // 🔥 PRIORITY-BASED STAGE LOGIC
+// Negotiation > Visit > Budget > Property > Interested > New Lead
 
 if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
 
 } else if (signals.askedOffTopic) {
-  finalStage = previousStage || 'New Lead';
+  finalStage = normalizeStage(previousStage);
 
-} else if (signals.askedVisit) {
+} else if (signals.askedVisit || signals.confirmedVisit) {
   finalStage = 'Visit Scheduled';
 
-} else if (signals.confirmedVisit) {
-  finalStage = 'Visit Scheduled';
-
-} else if (signals.askedFinancing || financingQuestionCount >= 1) {
-  finalStage = 'Budget Qualified';
-
-} else if (signals.askedPrice || priceQuestionCount >= 1) {
+} else if (signals.askedFinancing || signals.askedPrice || financingQuestionCount >= 1 || priceQuestionCount >= 1) {
   finalStage = 'Budget Qualified';
 
 } else if (signals.askedPropertyInfo || signals.askedDetails) {
+  finalStage = 'Property Sent';
+
+} else if (signals.askedGeneralInterest) {
   finalStage = 'Interested';
+
 } else {
-  finalStage = previousStage || 'New Lead';
+  finalStage = normalizeStage(previousStage);
 }
 
   const previous = normalizeStage(previousStage);
@@ -362,23 +367,141 @@ Correct:
 Incorrect:
 
 "Would you like to schedule a visit?"  ❌ (repeating)
-LEAD_STAGE CLASSIFICATION:
-Return exactly ONE of these:
-- New Lead
-- Interested
-- Budget Qualified
-- Property Sent
-- Visit Scheduled
-- Visited
-- Negotiation
 
-Rules:
-- Greeting only → New Lead
-- General interest → Interested
-- Price / bank / financing / loan / budget → Budget Qualified
-- Location / details / layout / property info → Property Sent
-- User clearly agrees to visit or gives day/time → Visit Scheduled
-- Offer / discount / negotiation → Negotiation
+LEAD STAGE CLASSIFICATION (CRITICAL)
+
+Always return EXACTLY one:
+
+New Lead
+Interested
+Budget Qualified
+Property Sent
+Visit Scheduled
+Visited
+Negotiation
+
+---
+
+PRIORITY ORDER (TOP → BOTTOM):
+
+1. Negotiation
+2. Visit Scheduled
+3. Budget Qualified
+4. Property Sent
+5. Interested
+6. New Lead
+
+Always choose the HIGHEST matching stage.
+
+---
+
+1. NEW LEAD (GREETING / NO INTENT)
+
+If the user ONLY sends a greeting or casual message:
+
+Examples:
+- Hi
+- Hello
+- Good morning
+- Buenas
+- Hola
+- How are you?
+- I’m good
+
+Then:
+lead_stage = "New Lead"
+
+IMPORTANT:
+- Do NOT classify as Interested
+- Do NOT upgrade stage
+
+---
+
+2. INTERESTED (GENERAL INTEREST)
+
+If the user shows general curiosity but no specific intent:
+
+Examples:
+- I want info
+- Tell me about the house
+- I’m interested
+
+Then:
+lead_stage = "Interested"
+
+---
+
+3. PROPERTY SENT (EVALUATION STAGE)
+
+If the user asks about property details or is evaluating:
+
+Examples:
+- Layout / plano / distribución
+- Location / ubicación
+- Patio / rooms / size / title
+- “Can I see the layout?”
+- “Does it have a patio?”
+
+Then:
+lead_stage = "Property Sent"
+
+---
+
+4. BUDGET QUALIFIED (MONEY AWARENESS)
+
+If the user asks about money or financing:
+
+Examples:
+- Price
+- Loan / bank / financing
+- Monthly payments
+- Down payment
+
+Then:
+lead_stage = "Budget Qualified"
+
+---
+
+5. VISIT SCHEDULED (STRONG INTENT)
+
+ONLY if the user clearly agrees to visit OR provides scheduling intent:
+
+Examples:
+- I want to visit
+- When can I go?
+- Tomorrow works
+- Saturday at 3
+
+IMPORTANT:
+- “Yes”, “Ok”, “Nice”, “Looks good” → NOT enough
+- Must be explicit visit intent
+
+Then:
+lead_stage = "Visit Scheduled"
+
+---
+
+6. NEGOTIATION (PRICE PUSHING)
+
+If the user negotiates or makes an offer:
+
+Examples:
+- What’s the lowest?
+- Can you lower the price?
+- I offer 4.1M
+- Discount?
+
+Then:
+lead_stage = "Negotiation"
+
+---
+
+RULES:
+
+- NEVER upgrade based on message count alone
+- NEVER downgrade stages
+- If unclear → keep previous stage
+- Always prioritize strongest intent
 
 OUTPUT FORMAT:
 Return ONLY valid JSON:
