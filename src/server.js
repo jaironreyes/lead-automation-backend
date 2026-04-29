@@ -644,7 +644,6 @@ app.post('/webhooks/manychat', async (req, res) => {
           content: [
             {
               type: 'input_text',
-              text: `
 text: `
 Nombre: ${firstName}
 
