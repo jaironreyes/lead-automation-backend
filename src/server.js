@@ -90,7 +90,7 @@ return {
 
   askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
-  confirmedVisit: /\b(i want to visit|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg)
+  confirmedVisit: /\b(i want to visit|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
 
   askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
 
