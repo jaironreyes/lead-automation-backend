@@ -91,6 +91,10 @@ return {
   askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
   confirmedVisit: /\b(i want to visit|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg)
+
+  askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
+
+  askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg)
 };
 }
 
@@ -127,6 +131,9 @@ function determineHybridLeadStage({
 if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
 
+} else if (signals.askedOffTopic) {
+  finalStage = previousStage || 'New Lead';
+
 } else if (signals.askedVisit) {
   finalStage = 'Visit Scheduled';
 
@@ -139,7 +146,7 @@ if (signals.askedNegotiation) {
 } else if (signals.askedPrice || priceQuestionCount >= 1) {
   finalStage = 'Budget Qualified';
 
-} else if (messageCount >= 4 && finalStage === 'New Lead') {
+} else if (signals.askedPropertyInfo || signals.askedDetails) {
   finalStage = 'Interested';
 }
 
