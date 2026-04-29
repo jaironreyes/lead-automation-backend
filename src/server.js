@@ -105,6 +105,8 @@ function detectBehaviorSignals(rawText) {
     gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
 
     gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
+
+    gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && previousStage === 'Budget Qualified',
     
     agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
 
@@ -157,6 +159,9 @@ if (signals.askedNegotiation) {
 ) {
   finalStage = 'Visit Scheduled';
 
+} else if (signals.gaveSchedulingTime && previousStage === 'Visit Scheduled') {
+  finalStage = 'Visit Scheduled';
+  
 } else if (signals.askedFinancing || signals.askedPrice) {
   finalStage = 'Budget Qualified';
 
