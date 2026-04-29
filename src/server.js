@@ -100,7 +100,11 @@ function detectBehaviorSignals(rawText) {
 
     askedGeneralInterest: /\b(interested|i am interested|i want info|tell me more|me interesa|quiero informacion|quiero información|quiero saber más|mas informacion|más información)\b/i.test(msg),
 
-    askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg)
+    askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg),
+
+    gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
+
+    gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
   };
 }
 
@@ -138,10 +142,12 @@ function determineHybridLeadStage({
 if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
 
-} else if (signals.askedOffTopic) {
-  finalStage = normalizeStage(previousStage);
-
-} else if (signals.askedVisit || signals.confirmedVisit) {
+} else if (
+  signals.gaveSchedulingTime ||
+  signals.gaveSchedulingDay ||
+  signals.askedVisit ||
+  signals.confirmedVisit
+) {
   finalStage = 'Visit Scheduled';
 
 } else if (signals.askedFinancing || signals.askedPrice) {
@@ -152,6 +158,9 @@ if (signals.askedNegotiation) {
 
 } else if (signals.askedGeneralInterest) {
   finalStage = 'Interested';
+
+} else if (signals.askedOffTopic) {
+  finalStage = normalizeStage(previousStage);
 
 } else {
   finalStage = normalizeStage(previousStage);
@@ -367,6 +376,29 @@ Correct:
 Incorrect:
 
 "Would you like to schedule a visit?"  ❌ (repeating)
+
+SCHEDULING CONTEXT:
+
+If the previous bot message asked for a day or time, interpret the user's next short answer as scheduling information.
+
+Examples:
+- "Tomorrow" = day for visit
+- "Monday afternoon" = day/time preference
+- "5:30 PM" = time for visit
+- "Can you?" = asking if that time works
+
+Do not ask again for information the user already gave.
+
+If the user gives both day and time:
+Confirm clearly.
+
+Correct:
+"Perfect 👍 Tomorrow at 5:30 PM works as the visit request. I’ll coordinate the details."
+
+Incorrect:
+"What day works best for you?"
+"What time would you prefer?"
+"Could you clarify what you're interested in?"
 
 LEAD STAGE CLASSIFICATION (CRITICAL)
 
