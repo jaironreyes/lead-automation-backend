@@ -328,13 +328,13 @@ const visitQuestionCount = Number(body.visit_question_count || 0);
 const signals = detectBehaviorSignals(rawMsg);
 
 // 🔥 UPDATE COUNTERS
-const updatedMessageCount = messageCount + 1;
-const updatedPriceQuestionCount = priceQuestionCount + (signals.askedPrice ? 1 : 0);
-const updatedFinancingQuestionCount = financingQuestionCount + (signals.askedFinancing ? 1 : 0);
-const updatedVisitQuestionCount = visitQuestionCount + (signals.askedVisit ? 1 : 0);
+const messageCount = toNumber(body.message_count);
+const priceQuestionCount = toNumber(body.price_question_count);
+const financingQuestionCount = toNumber(body.financing_question_count);
+const visitQuestionCount = toNumber(body.visit_question_count);
 
 // 🔥 HYBRID LOGIC (AI + BEHAVIOR)
-const finalStage = determineHybridLeadStage({
+const previous = normalizeStage(previousStage);
   aiStage: parsed.lead_stage,
   previousStage: body.lead_stage,
   rawMsg,
@@ -350,7 +350,7 @@ const finalStage = determineHybridLeadStage({
   status: parsed.status || 'continue',
   next_step_label: parsed.next_step_label || 'info_requested',
 
-  lead_stage: finalStage,
+  let finalStage = normalizeStage(aiStage || previousStage);
 
   extracted: {
     lead_stage: finalStage,
