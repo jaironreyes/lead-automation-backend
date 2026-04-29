@@ -118,17 +118,21 @@ function determineHybridLeadStage({
 
   let finalStage = normalizeStage(aiStage || previousStage);
 
-  if (signals.askedVisit || visitQuestionCount >= 1) {
-    finalStage = 'Visit Scheduled';
-  } else if (signals.askedFinancing || financingQuestionCount >= 1) {
-    finalStage = 'Budget Qualified';
-  } else if (signals.askedPrice && priceQuestionCount >= 2) {
-    finalStage = 'Budget Qualified';
-  } else if (signals.askedPrice) {
-    finalStage = 'Budget Qualified';
-  } else if (messageCount >= 4 && finalStage === 'New Lead') {
-    finalStage = 'Interested';
-  } else if (messageCount >= 4 && finalStage === 'New Lead') {
+// 🔥 PRIORITY-BASED STAGE LOGIC
+
+if (signals.askedNegotiation) {
+  finalStage = 'Negotiation';
+
+} else if (signals.askedVisit) {
+  finalStage = 'Visit Scheduled';
+
+} else if (signals.askedFinancing || financingQuestionCount >= 1) {
+  finalStage = 'Budget Qualified';
+
+} else if (signals.askedPrice || priceQuestionCount >= 1) {
+  finalStage = 'Budget Qualified';
+
+} else if (messageCount >= 4 && finalStage === 'New Lead') {
   finalStage = 'Interested';
 }
 
@@ -199,10 +203,44 @@ SALES RULES:
 - Do not push a visit before the user is ready.
 - If the user is positive after seeing layout/details, then move toward visit.
 
-PRICE / NEGOTIATION:
-- If they ask price, say RD$4.5M and reinforce value.
-- Do not mention RD$4.3M unless they clearly negotiate or make an offer.
-- If they ask for discount, say the price is already adjusted, but a serious proposal can be discussed.
+NEGOTIATION LOGIC:
+Published price: RD$4.5M.
+Minimum possible price: RD$4.3M.
+
+Never offer RD$4.3M first.
+
+If the user asks "lowest price" or "minimum price":
+- Do not reveal RD$4.3M immediately.
+- Say the price is RD$4.5M and serious offers can be reviewed.
+
+If the user offers below RD$4.3M:
+- Politely reject it.
+- Say that range is too low.
+- Ask if they can get closer.
+
+If the user offers RD$4.3M or says they cannot go above RD$4.3M:
+- Treat it as a serious negotiation.
+- Do not reject it.
+- Say it may be possible to review if they are serious.
+- Move to WhatsApp or visit/verification.
+
+Correct:
+"RD$4.1M would be too low 👍 The price is RD$4.5M, but if you can get closer, a serious offer can be reviewed."
+
+Correct:
+"RD$4.3M is closer 👍 If you’re serious, we can review that range. Would you like to continue by WhatsApp so we can handle it properly?"
+
+Incorrect:
+"The price is RD$4.5M" repeated multiple times.
+
+IF USER WALKS AWAY:
+
+If the user says they will look elsewhere, respond respectfully but leave the door open with value.
+
+Correct:
+"I understand 👍 If RD$4.3M is your limit, that may still be worth reviewing seriously. If you want, we can continue by WhatsApp and see if there’s room to work with it."
+
+Do not end with generic customer service phrases.
 
 LAYOUT / FLOOR PLAN TRIGGER:
 If the user asks for:
