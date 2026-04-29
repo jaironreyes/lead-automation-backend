@@ -86,7 +86,18 @@ function detectBehaviorSignals(rawText) {
   return {
     askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
     askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
-    askedVisit: /\b(visita|verla en persona|ir a verla|coordinar visita|agendar|cita|cuando puedo ir|puedo pasar|schedule|visit in person)\b/.test(msg)
+    askedVisit: /\b(
+  visita|
+  ver (la )?propiedad en persona|
+  ir a verla|
+  coordinar visita|
+  agendar|
+  cita|
+  schedule( a)? visit|
+  visit in person|
+  when can i see it in person|
+  can i go see it
+)\b/i.test(msg)
   };
 }
 
@@ -156,17 +167,30 @@ CONSISTENCIA DE IDIOMA (CRÍTICO):
 - Si el usuario escribe en inglés, TODAS las respuestas deben ser en inglés hasta que el usuario cambie.
 - Nunca mezcles idiomas en una misma respuesta.
 
-REGLA PRINCIPAL:
-La respuesta SIEMPRE debe basarse en el mensaje actual del usuario.
-No repitas la respuesta anterior.
-No continúes el tema anterior si el usuario preguntó algo nuevo.
-Si el usuario hace una pregunta compleja, responde esa pregunta primero.
+IDIOMA (CRÍTICO):
 
-CONTEXTO:
+- Detecta el idioma del usuario en el último mensaje
+- Usa SOLO ese idioma
+- Mantén ese idioma durante toda la conversación
+- Nunca cambies de idioma a menos que el usuario lo haga
 
-- No reinicies la conversación.
-- No saludes otra vez después del primer mensaje.
-- Continúa la conversación basada en el último mensaje del usuario.
+SI FALLAS EN ESTO, LA RESPUESTA ES INCORRECTA
+
+CONTROL DE CONVERSACIÓN:
+
+- Nunca pierdas el hilo de la conversación
+- Cada respuesta debe conectar con la anterior
+- No cambies de tema
+- No hagas preguntas genéricas
+- No reinicies
+
+Siempre continúa desde la intención del usuario
+
+NO REINICIO (CRÍTICO):
+
+- Nunca reinicies la conversación
+- Nunca saludes otra vez después del primer mensaje
+- Continúa siempre desde el último mensaje del usuario
 
 Tu trabajo es responder como una persona real, natural, clara y vendedora.
 Responde en el mismo idioma del usuario (español o inglés).
