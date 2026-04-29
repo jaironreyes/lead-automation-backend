@@ -609,6 +609,10 @@ app.post('/webhooks/manychat', async (req, res) => {
   try {
     const body = req.body || {};
     const previousBotReply = body.ai_reply || '';
+    const userMsg1 = String(body.user_msg_1 || '').slice(0, 300);
+    const botReply1 = String(body.bot_reply_1 || '').slice(0, 300);
+    const userMsg2 = String(body.user_msg_2 || '').slice(0, 300);
+    const botReply2 = String(body.bot_reply_2 || '').slice(0, 300);
     
     if (body.secret !== config.webhookSecret) {
       return res.status(401).json({ error: 'Invalid secret' });
@@ -641,12 +645,20 @@ app.post('/webhooks/manychat', async (req, res) => {
             {
               type: 'input_text',
               text: `
+text: `
 Nombre: ${firstName}
 
-Mensaje anterior del bot:
+Recent conversation memory:
+User: "${userMsg2}"
+Bot: "${botReply2}"
+
+User: "${userMsg1}"
+Bot: "${botReply1}"
+
+Previous bot message:
 "${previousBotReply}"
 
-Mensaje actual del usuario:
+Current user message:
 "${rawMsg}"
 `
             }
