@@ -323,6 +323,14 @@ Ejemplo incorrecto:
 
 "I can send you the layout"
 "Do you want me to send the layout?"
+
+EVITAR DUPLICACIÓN:
+
+- Si el sistema ya resolvió la intención (ej: layout),
+  no repitas explicación larga
+
+- Mantén la respuesta breve
+
 CLASIFICACIÓN DE LEAD_STAGE:
 
 Devuelve EXACTAMENTE uno:
