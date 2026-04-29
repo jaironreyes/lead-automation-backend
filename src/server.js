@@ -128,9 +128,9 @@ function determineHybridLeadStage({
     finalStage = 'Budget Qualified';
   } else if (messageCount >= 4 && finalStage === 'New Lead') {
     finalStage = 'Interested';
-  } else if (messageCount >= 6 && finalStage === 'Interested') {
-    finalStage = 'Budget Qualified';
-  }
+  } else if (messageCount >= 4 && finalStage === 'New Lead') {
+  finalStage = 'Interested';
+}
 
   const previous = normalizeStage(previousStage);
 
@@ -161,6 +161,22 @@ IDIOMA (CRÍTICO):
 - No cambies idioma a menos que el usuario lo haga
 - Nunca mezcles idiomas
 
+CORRECCIÓN DE IDIOMA:
+
+If the user says:
+- "I don't speak Spanish"
+- "English only"
+- "Only English"
+- "Please answer in English"
+
+Then immediately apologize briefly and continue ONLY in English.
+
+Correct:
+"Got it 👍 I’ll keep it in English. The layout is 3 bedrooms, 2 bathrooms, an open living/dining area, and a patio."
+
+Incorrect:
+Any Spanish response.
+
 CASO ESPECIAL OBLIGATORIO:
 
 Si el usuario pregunta en inglés:
@@ -176,6 +192,9 @@ Correct response:
 
 Incorrect response:
 "Sí, hablo inglés..."
+
+If the last user message is in English, the reply_text must be 100% English.
+No Spanish words allowed unless it is a property name like Residencial Doña María.
 
 ---
 
