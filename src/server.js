@@ -83,11 +83,15 @@ function toNumber(value) {
 function detectBehaviorSignals(rawText) {
   const msg = normalizeText(rawText);
 
-  return {
-    askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/.test(msg),
-    askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/.test(msg),
-    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg)
-  };
+return {
+  askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta)\b/i.test(msg),
+
+  askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar)\b/i.test(msg),
+
+  askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|saturday|sunday|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
+
+  confirmedVisit: /\b(yes|sure|ok|yeah|i said yes|claro|si|sí)\b/i.test(msg)
+};
 }
 
 function determineHybridLeadStage({
@@ -124,6 +128,9 @@ if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
 
 } else if (signals.askedVisit) {
+  finalStage = 'Visit Scheduled';
+
+} else if (signals.confirmedVisit && previousStage === 'Property Sent') {
   finalStage = 'Visit Scheduled';
 
 } else if (signals.askedFinancing || financingQuestionCount >= 1) {
@@ -311,7 +318,41 @@ Then do NOT ask if they are interested again.
 Move forward:
 English: "Great 👍 Would you like to schedule a visit to see it in person?"
 Spanish: "Perfecto 👍 ¿Quieres coordinar una visita para verla en persona?"
+VISIT CONFIRMATION (CRITICAL):
 
+If the user already agreed to visit:
+
+Examples:
+- "yes"
+- "sure"
+- "ok"
+- "I said yes"
+- "yeah"
+- "claro"
+- "sí"
+
+Then:
+
+DO NOT ask again if they want to schedule a visit.
+
+Instead:
+
+Move forward and collect logistics:
+- Ask for day
+- Ask for time
+- Or move to WhatsApp to coordinate
+
+Correct:
+
+"What day works best for you?"
+
+"Great 👍 What time would you prefer?"
+
+"We can coordinate it quickly by WhatsApp 👉 849-207-3914"
+
+Incorrect:
+
+"Would you like to schedule a visit?"  ❌ (repeating)
 LEAD_STAGE CLASSIFICATION:
 Return exactly ONE of these:
 - New Lead
