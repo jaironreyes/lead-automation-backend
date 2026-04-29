@@ -111,7 +111,7 @@ function determineHybridLeadStage({
     'Visited': 7
   };
 
-  let finalStage = normalizeLeadStage(aiStage || previousStage);
+  let finalStage = normalizeStage(aiStage || previousStage);
 
   if (signals.askedVisit || visitQuestionCount >= 1) {
     finalStage = 'Visit Scheduled';
@@ -365,7 +365,7 @@ return res.json({
 
     return res.json({
       ok: true,
-      reply_text: 'Escríbeme por WhatsApp 👉 849-207-3914',
+      reply_text: `ERROR DEBUG: ${err.message}`,
       lead_stage: 'Interested',
       extracted: { lead_stage: 'Interested' }
     });
