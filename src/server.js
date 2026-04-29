@@ -148,6 +148,8 @@ if (signals.askedNegotiation) {
 
 } else if (signals.askedPropertyInfo || signals.askedDetails) {
   finalStage = 'Interested';
+} else {
+  finalStage = previousStage || 'New Lead';
 }
 
   const previous = normalizeStage(previousStage);
