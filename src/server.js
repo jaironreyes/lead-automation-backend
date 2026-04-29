@@ -127,7 +127,7 @@ function determineHybridLeadStage({
     finalStage = 'Budget Qualified';
   }
 
-  const previous = normalizeLeadStage(previousStage);
+  const previous = normalizeStage(previousStage);
 
   // Prevent going backwards unless the old stage was empty/new.
   if (stageRank[previous] > stageRank[finalStage]) {
@@ -344,13 +344,13 @@ const finalStage = determineHybridLeadStage({
   visitQuestionCount: updatedVisitQuestionCount
 });
 
-   return res.json({
+return res.json({
   ok: true,
   reply_text: parsed.reply_text,
   status: parsed.status || 'continue',
   next_step_label: parsed.next_step_label || 'info_requested',
 
-  let finalStage = normalizeStage(aiStage || previousStage);
+  lead_stage: finalStage,
 
   extracted: {
     lead_stage: finalStage,
