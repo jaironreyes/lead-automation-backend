@@ -152,7 +152,7 @@ function determineHybridLeadStage({
 // 🔥 PRIORITY-BASED STAGE LOGIC
 // Negotiation > Visit > Budget > Property > Interested > New Lead
 
-if (signals.askedNegotiation) {
+if (signals.askedNegotiation || signals.gavePriceNumber) {
   finalStage = 'Negotiation';
 
 } else if (signals.askedWhatsapp || signals.agreedToNextStep) {
