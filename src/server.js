@@ -118,6 +118,8 @@ return {
 
   // 5. Non-sales / off-topic
   askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg),
+
+  askedGreetingOnly: /^(hi|hello|hey|hola|buenas|saludos|saludos otra vez|hello again|buen dia|buen día|good morning|good afternoon)$/i.test(msg),
 };
 }
 
@@ -152,7 +154,10 @@ function determineHybridLeadStage({
 // 🔥 PRIORITY-BASED STAGE LOGIC
 // Negotiation > Visit > Budget > Property > Interested > New Lead
 
-if (signals.askedNegotiation || signals.gavePriceNumber) {
+if (signals.askedGreetingOnly) {
+  finalStage = 'New Lead';
+
+} else if (signals.askedNegotiation || signals.gavePriceNumber) {
   finalStage = 'Negotiation';
 
 } else if (signals.askedWhatsapp || signals.agreedToNextStep) {
@@ -189,6 +194,11 @@ if (signals.askedNegotiation || signals.gavePriceNumber) {
   const previous = normalizeStage(prevStage);
 
   // Prevent going backwards unless the old stage was empty/new.
+  
+  if (signals.askedGreetingOnly) {
+    return finalStage;
+  }
+  
   if (stageRank[previous] > stageRank[finalStage]) {
     return previous;
   }
@@ -252,6 +262,22 @@ IF USER GOES OFF-TOPIC:
 
 Example:
 "I can’t help with that, but I’m here for anything about the property 👍"
+
+GREETING RESET RULE:
+
+If the user sends a greeting like:
+"hola", "hi", "saludos", "hello again"
+
+Treat it as a soft restart.
+
+DO NOT continue pushing previous step.
+
+Instead:
+- Acknowledge greeting
+- Re-engage naturally
+
+Example:
+"Hola 👋 ¿te gustaría ver más detalles de la casa o coordinar una visita?"
 
 CONTEXT MEMORY (CRITICAL):
 
