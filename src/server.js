@@ -723,6 +723,31 @@ const finalStage = determineHybridLeadStage({
   visitQuestionCount: updatedVisitQuestionCount
 });
 
+// 🔥 MEDIA INTENT ENGINE (CLEAN)
+
+const msg = normalizeText(rawMsg);
+
+let mediaIntent = 'none';
+
+// PRIORITY ORDER (important)
+
+// 1. POOL / AMENITIES
+if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
+  mediaIntent = 'pool';
+
+// 2. ENTRANCE / SECURITY
+} else if (/\b(entrada|frente|fachada|acceso|exterior|outside|entrance|seguridad|porton|proyecto cerrado)\b/i.test(msg)) {
+  mediaIntent = 'entrance';
+
+// 3. LAYOUT
+} else if (/\b(layout|plano|planos|distribucion|distribucion|floor plan|habitaciones|cuartos|como es por dentro)\b/i.test(msg)) {
+  mediaIntent = 'layout';
+
+// 4. RENDER / FINAL LOOK
+} else if (/\b(render|terminada|final|como quedaria|como va a quedar|como se veria)\b/i.test(msg)) {
+  mediaIntent = 'render';
+}
+    
 return res.json({
   ok: true,
   reply_text: parsed.reply_text,
@@ -730,9 +755,11 @@ return res.json({
   next_step_label: parsed.next_step_label || 'info_requested',
 
   lead_stage: finalStage,
+  media_intent: mediaIntent, // 🔥 ADD THIS
 
   extracted: {
     lead_stage: finalStage,
+    media_intent: mediaIntent, // 🔥 ADD THIS
     message_count: updatedMessageCount,
     price_question_count: updatedPriceQuestionCount,
     financing_question_count: updatedFinancingQuestionCount,
