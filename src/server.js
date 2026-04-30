@@ -110,8 +110,7 @@ return {
   askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
 
   // 4. Interest / property evaluation
-  askedGeneralInterest: /\b(
-  interested|i am interested|i want info|tell me more|
+  askedGeneralInterest: /\b(interested|i am interested|i want info|tell me more|
   me interesa|quiero informacion|quiero información|
   quiero saber más|mas informacion|más información|
   dame detalles|detalles|quiero detalles|información
