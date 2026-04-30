@@ -83,37 +83,42 @@ function toNumber(value) {
 function detectBehaviorSignals(rawText) {
   const msg = normalizeText(rawText);
 
-  return {
-    askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|take|can you take|i can offer|4\.1|4\.3|millones)\b/i.test(msg),
+return {
+  // 1. Highest-value conversion signals
+  askedWhatsapp: /\b(whatsapp|number|phone|contacto|numero|número)\b/i.test(msg),
 
-    askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta|price|how much)\b/i.test(msg),
+  askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|take|can you take|i can offer|4\.1|4\.3|millones)\b/i.test(msg),
 
-    askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
+  gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && parseFloat(msg) >= 3,
 
-    askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|mañana|tarde|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
+  // 2. Visit / scheduling signals
+  gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
 
-    confirmedVisit: /\b(sure|yes|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
+  gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
 
-    askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|for sale|venta)\b/i.test(msg),
+  askedVisit: /\b(i want to visit|i want to see it in person|schedule a visit|book a visit|when can i go|can i go see it|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|mañana|tarde|quiero verla en persona|quiero visitarla|coordinar visita|agendar visita)\b/i.test(msg),
 
-    askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación)\b/i.test(msg),
+  confirmedVisit: /\b(sure|yes|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
 
-    askedGeneralInterest: /\b(interested|i am interested|i want info|tell me more|me interesa|quiero informacion|quiero información|quiero saber más|mas informacion|más información)\b/i.test(msg),
+  askedGeneralAgreement: /\b(looks good|looked good|me gusta|se ve bien|perfecto|nice|great)\b/i.test(msg),
 
-    askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg),
+  agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
 
-    gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
+  // 3. Budget signals
+  askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta|price|how much)\b/i.test(msg),
 
-    gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
+  askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
 
-    gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && parseFloat(msg) >= 3,
-    
-    agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
+  // 4. Interest / property evaluation
+  askedGeneralInterest: /\b(interested|i am interested|i want.*info|tell me more|me interesa|quiero.*informacion|quiero.*información|quiero saber más|mas informacion|más información)\b/i.test(msg),
 
-    askedWhatsapp: /\b(whatsapp|number|phone|contacto|numero|número)\b/i.test(msg),
+  askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación)\b/i.test(msg),
 
-    askedGeneralAgreement: /\b(looks good|looked good|me gusta|se ve bien|perfecto|nice|great)\b/i.test(msg),
-  };
+  askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|for sale|venta)\b/i.test(msg),
+
+  // 5. Non-sales / off-topic
+  askedOffTopic: /\b(weather|clima|how are you|how is your day|where are you at|what are you doing)\b/i.test(msg),
+};
 }
 
 function determineHybridLeadStage({
