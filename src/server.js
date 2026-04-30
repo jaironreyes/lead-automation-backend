@@ -341,10 +341,10 @@ Then:
 - Assume the system will send the layout image automatically.
 
 Correct English:
-"[SEND_LAYOUT] This is the layout 👍 Let me know if this distribution works for you."
+"This is the layout 👍 Let me know if this distribution works for you."
 
 Correct Spanish:
-"[SEND_LAYOUT] Esta es la distribución 👍 Dime si te funciona este diseño."
+"Esta es la distribución 👍 Dime si te funciona este diseño."
 
 AFTER POSITIVE LAYOUT REACTION:
 
