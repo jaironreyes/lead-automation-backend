@@ -176,11 +176,11 @@ if (signals.askedNegotiation) {
 } else if (signals.askedFinancing || signals.askedPrice) {
   finalStage = 'Budget Qualified';
 
-} else if (signals.askedPropertyInfo || signals.askedDetails) {
-  finalStage = 'Property Sent';
-
 } else if (signals.askedGeneralInterest) {
   finalStage = 'Interested';
+
+} else if (signals.askedPropertyInfo || signals.askedDetails) {
+  finalStage = 'Property Sent';
 
 } else {
   finalStage = normalizeStage(prevStage);
