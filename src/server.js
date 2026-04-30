@@ -94,7 +94,7 @@ function detectBehaviorSignals(rawText) {
 
     confirmedVisit: /\b(sure|yes|yes i want to visit|yes schedule it|yes let’s schedule|yes lets schedule|sure schedule it|i said yes to visit|quiero visitarla|quiero verla en persona|sí quiero verla|si quiero verla|claro vamos a coordinar)\b/i.test(msg),
 
-    askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|info|information|details|detalles|for sale|venta)\b/i.test(msg),
+    askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|for sale|venta)\b/i.test(msg),
 
     askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación)\b/i.test(msg),
 
@@ -218,6 +218,13 @@ CONVERSATION CONTROL:
 - Do not ask generic questions like “How can I help you?”
 - Continue from the user's latest intent.
 - Do not ask something the user already answered.
+
+IF USER GOES OFF-TOPIC:
+- Politely respond briefly
+- Redirect back to the property
+
+Example:
+"I can’t help with that, but I’m here for anything about the property 👍"
 
 CONTEXT MEMORY (CRITICAL):
 
