@@ -106,7 +106,10 @@ function detectBehaviorSignals(rawText) {
 
     gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
 
-    gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && parseFloat(msg) >= 3,
+    gavePriceNumber:
+  /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) &&
+  parseFloat(msg) >= 3 &&
+  previousStage === 'Budget Qualified',
     
     agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
 
@@ -175,6 +178,8 @@ if (signals.askedNegotiation) {
   finalStage = normalizeStage(previousStage);
 
 } else {
+  finalStage = normalizeStage(previousStage);
+} else if (/^\d+(\.\d+)?$/.test(msg.trim()) && previousStage !== 'Budget Qualified') {
   finalStage = normalizeStage(previousStage);
 }
 
