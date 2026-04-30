@@ -84,7 +84,7 @@ function detectBehaviorSignals(rawText) {
   const msg = normalizeText(rawText);
 
   return {
-    askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|4\.1|4\.3|millones)\b/i.test(msg),
+    askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|take|can you take|i can offer|4\.1|4\.3|millones)\b/i.test(msg),
 
     askedPrice: /\b(precio|cuanto|cuánto|cuesta|vale|monto|millones|rd\$|rebaja|negociable|oferta|price|how much)\b/i.test(msg),
 
