@@ -110,7 +110,12 @@ return {
   askedFinancing: /\b(banco|prestamo|préstamo|financiamiento|financiar|inicial|mensualidad|califico|separa|separar|bank|loan|financing|down payment|monthly payment)\b/i.test(msg),
 
   // 4. Interest / property evaluation
-  askedGeneralInterest: /\b(interested|i am interested|i want.*info|tell me more|me interesa|quiero.*informacion|quiero.*información|quiero saber más|mas informacion|más información)\b/i.test(msg),
+  askedGeneralInterest: /\b(
+  interested|i am interested|i want info|tell me more|
+  me interesa|quiero informacion|quiero información|
+  quiero saber más|mas informacion|más información|
+  dame detalles|detalles|quiero detalles|información
+  )\b/i.test(msg),
 
   askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|located|where is it located|where is it|address|map|ubicacion|ubicación)\b/i.test(msg),
 
@@ -181,11 +186,12 @@ if (signals.askedGreetingOnly) {
 } else if (signals.askedFinancing || signals.askedPrice) {
   finalStage = 'Budget Qualified';
 
-} else if (signals.askedGeneralInterest) {
-  finalStage = 'Interested';
-
 } else if (signals.askedPropertyInfo || signals.askedDetails) {
   finalStage = 'Property Sent';
+
+} else if (signals.askedGeneralInterest) {
+  finalStage = 'Interested';
+}
 
 } else {
   finalStage = normalizeStage(prevStage);
