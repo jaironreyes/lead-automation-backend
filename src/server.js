@@ -106,20 +106,19 @@ function detectBehaviorSignals(rawText) {
 
     gaveSchedulingDay: /\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)\b/i.test(msg),
 
-    gavePriceNumber:
-  /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) &&
-  parseFloat(msg) >= 3 &&
-  previousStage === 'Budget Qualified',
+    gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && parseFloat(msg) >= 3,,
     
     agreedToNextStep: /\b(let'?s do that|ok let'?s do it|sounds good|perfect|dale|vamos|ok hagamoslo)\b/i.test(msg),
 
     askedWhatsapp: /\b(whatsapp|number|phone|contacto|numero|número)\b/i.test(msg),
+
+    askedGeneralAgreement: /\b(looks good|looked good|me gusta|se ve bien|perfecto|nice|great)\b/i.test(msg),
   };
 }
 
 function determineHybridLeadStage({
   aiStage,
-  previousStage,
+  prevStage,
   rawMsg,
   messageCount,
   priceQuestionCount,
@@ -143,7 +142,7 @@ function determineHybridLeadStage({
     'Visited': 7
   };
 
-  let finalStage = normalizeStage(aiStage || previousStage);
+  let finalStage = normalizeStage(aiStage || prevStage);
 
 // 🔥 PRIORITY-BASED STAGE LOGIC
 // Negotiation > Visit > Budget > Property > Interested > New Lead
@@ -152,19 +151,23 @@ if (signals.askedNegotiation) {
   finalStage = 'Negotiation';
 
 } else if (signals.askedWhatsapp || signals.agreedToNextStep) {
-  finalStage = 'Negotiation'; // or keep Visit Scheduled if you prefer
+  finalStage = 'Negotiation';
+
+} else if (/^\d+(\.\d+)?$/.test(rawMsg.trim())) {
+  finalStage = normalizeStage(prevStage);
+
+} else if (signals.askedOffTopic) {
+  finalStage = normalizeStage(prevStage);
 
 } else if (
   signals.gaveSchedulingTime ||
   signals.gaveSchedulingDay ||
   signals.askedVisit ||
-  signals.confirmedVisit
+  signals.confirmedVisit ||
+  signals.askedGeneralAgreement
 ) {
   finalStage = 'Visit Scheduled';
 
-} else if (signals.gaveSchedulingTime && previousStage === 'Visit Scheduled') {
-  finalStage = 'Visit Scheduled';
-  
 } else if (signals.askedFinancing || signals.askedPrice) {
   finalStage = 'Budget Qualified';
 
@@ -174,16 +177,11 @@ if (signals.askedNegotiation) {
 } else if (signals.askedGeneralInterest) {
   finalStage = 'Interested';
 
-} else if (signals.askedOffTopic) {
-  finalStage = normalizeStage(previousStage);
-
-} else if (/^\d+(\.\d+)?$/.test(rawMsg.trim()) && normalizeStage(previousStage) !== 'Budget Qualified') {
-  finalStage = normalizeStage(previousStage);
 } else {
-  finalStage = normalizeStage(previousStage);
-} 
+  finalStage = normalizeStage(prevStage);
+}
 
-  const previous = normalizeStage(previousStage);
+  const previous = normalizeStage(prevStage);
 
   // Prevent going backwards unless the old stage was empty/new.
   if (stageRank[previous] > stageRank[finalStage]) {
@@ -705,7 +703,7 @@ const updatedVisitQuestionCount = visitQuestionCount + (signals.askedVisit ? 1 :
 // 🔥 HYBRID LOGIC (AI + BEHAVIOR)
 const finalStage = determineHybridLeadStage({
   aiStage: parsed.lead_stage,
-  previousStage: body.lead_stage,
+  prevStage: body.lead_stage,
   rawMsg,
   messageCount: updatedMessageCount,
   priceQuestionCount: updatedPriceQuestionCount,
