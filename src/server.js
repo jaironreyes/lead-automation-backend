@@ -177,11 +177,11 @@ if (signals.askedNegotiation) {
 } else if (signals.askedOffTopic) {
   finalStage = normalizeStage(previousStage);
 
-} else {
-  finalStage = normalizeStage(previousStage);
 } else if (/^\d+(\.\d+)?$/.test(msg.trim()) && previousStage !== 'Budget Qualified') {
   finalStage = normalizeStage(previousStage);
-}
+} else {
+  finalStage = normalizeStage(previousStage);
+} 
 
   const previous = normalizeStage(previousStage);
 
