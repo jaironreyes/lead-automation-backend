@@ -194,18 +194,25 @@ if (signals.askedGreetingOnly) {
 
   const previous = normalizeStage(prevStage);
 
-  // Prevent going backwards unless the old stage was empty/new.
-  
-  if (signals.askedGreetingOnly) {
-    return finalStage;
-  }
-  
-  if (stageRank[previous] > stageRank[finalStage]) {
-    return previous;
-  }
+// ✅ Real-time intent overrides previous stage
+const realtimeOverrideStages = [
+  'Negotiation',
+  'Budget Qualified',
+  'Visit Scheduled',
+  'Property Sent',
+  'Interested'
+];
 
+if (signals.askedGreetingOnly) {
+  return 'New Lead';
+}
+
+if (realtimeOverrideStages.includes(finalStage)) {
   return finalStage;
 }
+
+// ✅ Fallback: keep previous stage if no clear new intent
+return previous;
 
 /* ---------------- AI PROMPT ---------------- */
 
