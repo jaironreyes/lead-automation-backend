@@ -213,7 +213,7 @@ if (realtimeOverrideStages.includes(finalStage)) {
 
 // ✅ Fallback: keep previous stage if no clear new intent
 return previous;
-
+}
 /* ---------------- AI PROMPT ---------------- */
 
 function buildSystemPrompt() {
