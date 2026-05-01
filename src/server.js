@@ -112,7 +112,8 @@ return {
   // 4. Interest / property evaluation
   askedGeneralInterest: /\b(interested|i am interested|i want info|tell me more|me interesa|quiero informacion|quiero información|quiero saber más|mas informacion|más información)\b/i.test(msg),
 
-  askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación|details|detalles|dame detalles|quiero detalles|more details|mas detalles|más detalles)\b/i.test(msg),
+  askedDetails: /\b(layout|floor plan|distribution|plano|distribucion|distribución|patio|terrace|terraza|title|titulo|título|pool|piscina|bedrooms|habitaciones|bathrooms|baños|banos|lot|solar|size|metraje|meters|metros|location|ubicacion|ubicación)\b/i.test(msg),
+  askedGeneralDetails: /\b(dame mas detalles|dame más detalles|quiero mas detalles|quiero más detalles|more details|tell me more|mas detalles|más detalles)\b/i.test(msg),
 
   askedPropertyInfo: /\b(property|house|casa|villa mella|residencial doña maría|doña maria|for sale|venta)\b/i.test(msg),
 
@@ -184,7 +185,7 @@ if (signals.askedGreetingOnly) {
 } else if (signals.askedPropertyInfo || signals.askedDetails) {
   finalStage = 'Property Sent';
 
-} else if (signals.askedGeneralInterest) {
+} else if (signals.askedGeneralInterest || signals.askedGeneralDetails) {
   finalStage = 'Interested';
 
 } else {
