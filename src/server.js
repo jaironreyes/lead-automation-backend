@@ -842,7 +842,7 @@ if (/\b(fotos del proyecto|foto del proyecto|imagenes del proyecto|imágenes del
   mediaIntent = 'fotos';
 
 // 1. POOL / AMENITIES
-if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
+} else if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
   mediaIntent = 'pool';
 
 // 2. ENTRANCE / SECURITY
@@ -850,7 +850,7 @@ if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg
   mediaIntent = 'entrance';
 
 // 3. LAYOUT
-} else if (/\b(layout|plano|planos|distribucion|distribucion|floor plan|habitaciones|cuartos|como es por dentro)\b/i.test(msg)) {
+} else if (/\b(layout|plano|planos|distribucion|distribution|floor plan|habitaciones|cuartos|como es por dentro)\b/i.test(msg)) {
   mediaIntent = 'layout';
 
 // 4. RENDER / FINAL LOOK
