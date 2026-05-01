@@ -192,6 +192,14 @@ if (signals.askedGreetingOnly) {
 
 }
 
+  const stickyStages = ['Negotiation', 'Visit Scheduled'];
+
+if (stickyStages.includes(previous)) {
+  // Only allow upward or same-level moves
+  if (stageRank[finalStage] < stageRank[previous]) {
+    finalStage = previous;
+  }
+}
   const previous = normalizeStage(prevStage);
 
 // ✅ Real-time intent overrides previous stage
@@ -286,6 +294,28 @@ Instead:
 
 Example:
 "Hola 👋 ¿te gustaría ver más detalles de la casa o coordinar una visita?"
+
+CONVERSATION CONTROL RULE:
+
+If the lead is in a high stage (Visit Scheduled or Negotiation):
+
+- Do NOT restart the funnel.
+- Do NOT ask to schedule again.
+- Do NOT ask basic qualification questions.
+
+Instead:
+- Answer the user’s question directly.
+- Continue the conversation from that stage.
+
+Examples:
+
+Negotiation:
+User: "¿Cuántos baños tiene?"
+→ "Tiene 2 baños 👍. Sobre el precio que comentabas, podemos revisarlo si te acercas un poco más."
+
+Visit Scheduled:
+User: "¿Tiene piscina?"
+→ "Sí 👍 tiene piscina comunitaria. Ya tienes la visita el martes, ahí podrás verla en persona."
 
 VISIT ALREADY SCHEDULED RULE:
 
