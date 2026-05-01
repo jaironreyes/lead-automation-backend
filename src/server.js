@@ -354,6 +354,28 @@ IMPORTANT:
 - Keep the reply short.
 - Mention what image they are about to see.
 
+MEDIA INTENT CLASSIFICATION:
+
+You MUST always return a media_intent value.
+
+Allowed values:
+- none
+- layout
+- entrance
+- pool
+- render
+- fotos
+
+Rules:
+- layout → plano, distribución, floor plan
+- entrance → entrada, fachada, exterior, acceso, seguridad
+- pool → piscina, amenidades
+- render → versión terminada, cómo quedaría
+- fotos → request for general photos, images, “show me everything”
+- none → no image requested
+
+Always include media_intent in JSON.
+
 Correct:
 “Claro 👍 aquí tienes la piscina comunitaria del proyecto.”
 
@@ -724,7 +746,8 @@ Return ONLY valid JSON:
   "reply_text": "user-facing reply",
   "status": "continue",
   "next_step_label": "info_requested",
-  "lead_stage": "Interested"
+  "lead_stage": "Interested",
+  "media_intent": "none"
 }
 `;
 }
@@ -835,27 +858,36 @@ const msg = normalizeText(rawMsg);
 
 let mediaIntent = 'none';
 
-// PRIORITY ORDER (important)
+// ✅ 1. AI FIRST (PRIMARY SOURCE)
+const VALID_MEDIA = ['none', 'layout', 'entrance', 'pool', 'render', 'fotos'];
 
-// 0. GENERAL PROPERTY / PROJECT PHOTOS
-if (/\b(fotos del proyecto|foto del proyecto|imagenes del proyecto|imágenes del proyecto|pictures of the project|project photos|ver el proyecto|mostrar el proyecto)\b/i.test(msg)) {
-  mediaIntent = 'fotos';
+if (parsed.media_intent && VALID_MEDIA.includes(parsed.media_intent)) {
+  mediaIntent = parsed.media_intent;
+}
 
-// 1. POOL / AMENITIES
-} else if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
-  mediaIntent = 'pool';
+// ✅ 2. FALLBACK (ONLY IF AI FAILS)
+else {
 
-// 2. ENTRANCE / SECURITY
-} else if (/\b(entrada|frente|fachada|acceso|exterior|outside|entrance|seguridad|porton|proyecto cerrado)\b/i.test(msg)) {
-  mediaIntent = 'entrance';
+  // GENERAL PROJECT PHOTOS
+  if (/\b(fotos|photos|pictures|imagenes|imágenes|project photos|fotos del proyecto)\b/i.test(msg)) {
+    mediaIntent = 'fotos';
 
-// 3. LAYOUT
-} else if (/\b(layout|plano|planos|distribucion|distribution|floor plan|habitaciones|cuartos|como es por dentro)\b/i.test(msg)) {
-  mediaIntent = 'layout';
+  // POOL
+  } else if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
+    mediaIntent = 'pool';
 
-// 4. RENDER / FINAL LOOK
-} else if (/\b(render|terminada|final|como quedaria|como va a quedar|como se veria)\b/i.test(msg)) {
-  mediaIntent = 'render';
+  // ENTRANCE
+  } else if (/\b(entrada|frente|fachada|acceso|exterior|outside|entrance|seguridad|porton|proyecto cerrado)\b/i.test(msg)) {
+    mediaIntent = 'entrance';
+
+  // LAYOUT
+  } else if (/\b(layout|plano|planos|distribucion|distribution|floor plan|habitaciones|cuartos|como es por dentro)\b/i.test(msg)) {
+    mediaIntent = 'layout';
+
+  // RENDER
+  } else if (/\b(render|terminada|final|como quedaria|como va a quedar|como se veria)\b/i.test(msg)) {
+    mediaIntent = 'render';
+  }
 }
     
 return res.json({
