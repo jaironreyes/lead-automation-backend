@@ -840,7 +840,7 @@ let mediaIntent = 'none';
 // 0. GENERAL PROPERTY / PROJECT PHOTOS
 if (/\b(fotos del proyecto|foto del proyecto|imagenes del proyecto|imágenes del proyecto|pictures of the project|project photos|ver el proyecto|mostrar el proyecto)\b/i.test(msg)) {
   mediaIntent = 'fotos';
-    
+
 // 1. POOL / AMENITIES
 if (/\b(pool|piscina|amenidades|amenities|area comun|areas comunes)\b/i.test(msg)) {
   mediaIntent = 'pool';
