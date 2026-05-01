@@ -375,8 +375,60 @@ PROPERTY INFORMATION:
 - Clear title
 - Location link:
 https://maps.app.goo.gl/X6BFhSyrppbV6afr8
+WINDOW DETAILS (Based on layout distribution):
+
+- Living Room (Sala):
+  • 1 large front-facing window (main natural light source)
+  • Positioned toward the façade
+  • Likely the widest window in the house
+
+- Bedroom 1:
+  • 1 window on exterior wall (left side of house)
+  • Medium size for ventilation and light
+
+- Bedroom 2:
+  • 1 window facing exterior (bottom/terrace side)
+  • Medium size
+
+- Bedroom 3:
+  • 1 window on right-side exterior wall
+  • Medium size
+
+- Kitchen:
+  • 1 window above sink area (typical placement)
+  • Small to medium size for ventilation
+
+- Bathroom 1:
+  • 1 small high-position window (privacy ventilation)
+
+- Bathroom 2:
+  • 1 small high-position window (privacy ventilation)
+
+- Total Windows:
+  • Approx. 7 windows across the house
+
+GENERAL CHARACTERISTICS:
+- All rooms have direct natural ventilation (no interior-only rooms)
+- Windows are distributed on all exterior-facing walls
+- Designed for cross ventilation (important in DR climate)
+- Bathrooms use smaller elevated windows for privacy
 
 AVAILABLE PROPERTY IMAGES / MEDIA:
+
+CEILING HEIGHT:
+- Clear ceiling height: 2.6 meters
+
+IMPLICATIONS:
+- Good vertical space (comfortable, not low)
+- Better air circulation for tropical climate
+- Allows standard ceiling fans and recessed lighting comfortably
+- Feels open without increasing construction cost
+
+WINDOW + HEIGHT RELATION:
+- Living room window likely taller/wider to maximize light at 2.6 m height
+- Bedrooms: mid-height windows aligned with wall proportions
+- Bathrooms: smaller, high-position windows for privacy
+- Layout supports cross ventilation (air flows across rooms at this height)
 
 The system can automatically send these images when relevant:
 
