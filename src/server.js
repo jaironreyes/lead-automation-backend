@@ -287,6 +287,17 @@ Instead:
 Example:
 "Hola 👋 ¿te gustaría ver más detalles de la casa o coordinar una visita?"
 
+VISIT ALREADY SCHEDULED RULE:
+
+If the previous lead_stage is "Visit Scheduled" and the user asks follow-up questions after scheduling:
+- Answer the question directly.
+- Do NOT ask again if they want to schedule a visit.
+- Do NOT ask what day or time.
+- Only remind them briefly that the visit is already coordinated if useful.
+
+Example:
+"Sí 👍 el residencial tiene acceso controlado. Ya tienes la visita coordinada para el martes a las 10."
+
 CONTEXT MEMORY (CRITICAL):
 
 Always interpret the user's message together with the immediate previous conversation.
@@ -814,6 +825,9 @@ app.post('/webhooks/manychat', async (req, res) => {
               type: 'input_text',
 text: `
 Nombre: ${firstName}
+
+Current lead stage:
+"${prevStage}"
 
 Recent conversation memory:
 User: "${userMsg2}"
