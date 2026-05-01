@@ -746,6 +746,17 @@ RULES:
   DO NOT reclassify the stage based only on the last message.
   Maintain or upgrade the stage.
 
+DELAY RULE:
+
+You MUST return delay_seconds from 2 to 10.
+
+Use:
+- 2 to 4 for greetings or simple replies
+- 5 to 7 for normal property questions
+- 8 to 10 for price, visit, media, or negotiation replies
+
+Always include delay_seconds in JSON.
+
 OUTPUT FORMAT:
 Return ONLY valid JSON:
 
@@ -754,7 +765,8 @@ Return ONLY valid JSON:
   "status": "continue",
   "next_step_label": "info_requested",
   "lead_stage": "Interested",
-  "media_intent": "none"
+  "media_intent": "none",
+  "delay_seconds": 5
 }
 `;
 }
@@ -861,6 +873,12 @@ const finalStage = determineHybridLeadStage({
 
 // 🔥 MEDIA INTENT ENGINE (CLEAN)
 
+// 🔥 AI DELAY ENGINE
+const delaySeconds = Math.min(
+  Math.max(Number(parsed.delay_seconds) || 5, 2),
+  10
+);
+    
 const msg = normalizeText(rawMsg);
 
 let mediaIntent = 'none';
@@ -905,10 +923,12 @@ return res.json({
 
   lead_stage: finalStage,
   media_intent: mediaIntent, // 🔥 ADD THIS
-
+  delay_seconds: delaySeconds,
+  
   extracted: {
     lead_stage: finalStage,
     media_intent: mediaIntent, // 🔥 ADD THIS
+    delay_seconds: delaySeconds,
     message_count: updatedMessageCount,
     price_question_count: updatedPriceQuestionCount,
     financing_question_count: updatedFinancingQuestionCount,
