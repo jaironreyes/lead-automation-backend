@@ -192,6 +192,8 @@ if (signals.askedGreetingOnly) {
 
 }
 
+
+  const previous = normalizeStage(prevStage);
   const stickyStages = ['Negotiation', 'Visit Scheduled'];
 
 if (stickyStages.includes(previous)) {
@@ -200,8 +202,6 @@ if (stickyStages.includes(previous)) {
     finalStage = previous;
   }
 }
-  const previous = normalizeStage(prevStage);
-
 // ✅ Real-time intent overrides previous stage
 const realtimeOverrideStages = [
   'Negotiation',
