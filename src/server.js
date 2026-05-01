@@ -186,10 +186,10 @@ if (signals.askedGreetingOnly) {
 
 } else if (signals.askedGeneralInterest) {
   finalStage = 'Interested';
-}
 
 } else {
   finalStage = normalizeStage(prevStage);
+
 }
 
   const previous = normalizeStage(prevStage);
