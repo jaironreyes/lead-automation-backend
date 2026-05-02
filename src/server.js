@@ -151,7 +151,7 @@ function determineHybridLeadStage({
     'Visited': 7
   };
 
-  let finalStage = normalizeStage(aiStage || prevStage);
+  const previous = normalizeStage(prevStage);
 
 // 🔥 PRIORITY-BASED STAGE LOGIC
 // Negotiation > Visit > Budget > Property > Interested > New Lead
@@ -197,7 +197,6 @@ if (signals.askedGreetingOnly) {
 }
 
 
-  const previous = normalizeStage(prevStage);
   const stickyStages = ['Negotiation', 'Visit Scheduled'];
 
 if (stickyStages.includes(previous)) {
@@ -871,8 +870,9 @@ Return ONLY valid JSON:
 /* ---------------- WEBHOOK ---------------- */
 
 app.post('/webhooks/manychat', async (req, res) => {
+  const body = req.body || {};
+
   try {
-    const body = req.body || {};
     const previousBotReply = body.ai_reply || '';
     const userMsg1 = String(body.user_msg_1 || '').slice(0, 300);
     const botReply1 = String(body.bot_reply_1 || '').slice(0, 300);
@@ -887,6 +887,29 @@ app.post('/webhooks/manychat', async (req, res) => {
     const firstName = body.first_name || '';
     const prevStage = normalizeStage(body.lead_stage);
 
+  const cleanedPreviousBotReply = normalizeText(previousBotReply);
+  const cleanedRawPreview = normalizeText(body.last_user_message);
+
+if (
+  /ver mas detalles|ver mas detalle|mas detalles|coordinar una visita/.test(cleanedPreviousBotReply) &&
+  /^(si|sí|dale|mandamelo|mandamelo|dale mandamelo|ok|claro)$/.test(cleanedRawPreview)
+) {
+  return res.json({
+    ok: true,
+    reply_text: 'Claro 👍 La casa está en obra gris, tiene 3 habitaciones, 2 baños, 168 m² de solar, 100 m² de construcción, terraza, patio, cisterna, título claro y piscina comunitaria. El precio es RD$4.5M.',
+    status: 'continue',
+    next_step_label: 'property_details_sent',
+    lead_stage: 'Interested',
+    media_intent: 'none',
+    delay_seconds: 5,
+    extracted: {
+      lead_stage: 'Interested',
+      media_intent: 'none',
+      delay_seconds: 5
+    }
+  });
+}
+    
     if (isNoiseMessage(rawMsg)) {
       return res.json({
         ok: true,
