@@ -160,10 +160,10 @@ if (signals.askedGreetingOnly) {
   return normalizeStage(prevStage);
 
 } else if (signals.askedNegotiation || signals.gavePriceNumber) {
-  finalStage = 'Negotiation';
+  let finalStage = normalizeStage(prevStage);
 
 } else if (signals.agreedToNextStep && previous === 'Negotiation') {
-  finalStage = 'Negotiation';
+  let finalStage = normalizeStage(prevStage);
 
 } else if (signals.askedWhatsapp) {
   finalStage = normalizeStage(prevStage);
