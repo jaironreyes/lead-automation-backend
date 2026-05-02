@@ -89,7 +89,8 @@ return {
 
   askedNegotiation: /\b(lowest|minimum|offer|discount|negotiate|negotiable|rebaja|oferta|negociar|descuento|precio minimo|precio mínimo|lo menos|take|can you take|i can offer|4\.1|4\.3|millones)\b/i.test(msg),
 
-  gavePriceNumber: /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg) && parseFloat(msg) >= 3,
+  gavePriceNumber: /\b(rd\$|dop|millones|millon|millón|precio|oferta|rebaja|negociar|descuento)\b/i.test(msg)
+  && /\b([0-9]+(\.[0-9]+)?)\b/i.test(msg),
 
   // 2. Visit / scheduling signals
   gaveSchedulingTime: /\b([1-9]|1[0-2])(:[0-5][0-9])?\s?(am|pm|a\.m\.|p\.m\.)\b/i.test(msg),
@@ -156,13 +157,16 @@ function determineHybridLeadStage({
 // Negotiation > Visit > Budget > Property > Interested > New Lead
 
 if (signals.askedGreetingOnly) {
-  finalStage = 'New Lead';
+  return normalizeStage(prevStage);
 
 } else if (signals.askedNegotiation || signals.gavePriceNumber) {
   finalStage = 'Negotiation';
 
-} else if (signals.askedWhatsapp || signals.agreedToNextStep) {
+} else if (signals.agreedToNextStep && previous === 'Negotiation') {
   finalStage = 'Negotiation';
+
+} else if (signals.askedWhatsapp) {
+  finalStage = normalizeStage(prevStage);
 
 } else if (/^\d+(\.\d+)?$/.test(rawMsg.trim())) {
   finalStage = normalizeStage(prevStage);
@@ -174,8 +178,7 @@ if (signals.askedGreetingOnly) {
   signals.gaveSchedulingTime ||
   signals.gaveSchedulingDay ||
   signals.askedVisit ||
-  signals.confirmedVisit ||
-  signals.askedGeneralAgreement
+  signals.confirmedVisit
 ) {
   finalStage = 'Visit Scheduled';
 
