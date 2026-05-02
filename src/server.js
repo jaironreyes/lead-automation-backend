@@ -152,7 +152,8 @@ function determineHybridLeadStage({
   };
 
   const previous = normalizeStage(prevStage);
-
+  let finalStage = normalizeStage(aiStage || prevStage);
+  
 // 🔥 PRIORITY-BASED STAGE LOGIC
 // Negotiation > Visit > Budget > Property > Interested > New Lead
 
@@ -1010,7 +1011,7 @@ Current user message:
 let parsed;
 
 try {
-  parsed = JSON.parse(ai.output_text);
+parsed = JSON.parse(ai.output_text);
 } catch (parseErr) {
   console.log("AI RAW OUTPUT:", ai.output_text);
 
