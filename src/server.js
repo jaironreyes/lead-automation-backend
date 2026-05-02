@@ -1035,16 +1035,23 @@ return res.json({
     visit_question_count: updatedVisitQuestionCount
   }
 });
-  } catch (err) {
-    console.error(err);
+} catch (err) {
+  console.error(err);
 
-    return res.json({
-      ok: true,
-      reply_text: `ERROR DEBUG: ${err.message}`,
-      lead_stage: 'Interested',
-      extracted: { lead_stage: 'Interested' }
-    });
-  }
+  return res.json({
+    ok: true,
+    reply_text: 'Hubo un problema procesando tu mensaje 🙏 escríbeme otra vez en un solo mensaje.',
+    status: 'continue',
+    lead_stage: normalizeStage(body.lead_stage),
+    media_intent: 'none',
+    delay_seconds: 3,
+    extracted: {
+      lead_stage: normalizeStage(body.lead_stage),
+      media_intent: 'none',
+      delay_seconds: 3
+    }
+  });
+}
 });
 
 app.listen(config.port, () => {
