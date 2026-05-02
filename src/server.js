@@ -920,19 +920,19 @@ if (
       });
     }
 
-    const ai = await openai.responses.create({
-      model: config.openAiModel,
-      input: [
+const ai = await openai.responses.create({
+  model: config.openAiModel,
+  input: [
+    {
+      role: 'system',
+      content: [{ type: 'input_text', text: buildSystemPrompt() }]
+    },
+    {
+      role: 'user',
+      content: [
         {
-          role: 'system',
-          content: [{ type: 'input_text', text: buildSystemPrompt() }]
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-text: `
+          type: 'input_text',
+          text: `
 Nombre: ${firstName}
 
 Current lead stage:
@@ -951,22 +951,78 @@ Previous bot message:
 Current user message:
 "${rawMsg}"
 `
-            }
-          ]
         }
       ]
-    });
-
-    let parsed;
-
-    try {
-      parsed = JSON.parse(ai.output_text);
-    } catch {
-      parsed = {
-        reply_text: ai.output_text,
-        lead_stage: detectStageFallback(rawMsg, prevStage)
-      };
     }
+  ],
+
+  // 🔥 THIS IS THE IMPORTANT PART YOU ARE MISSING
+  text: {
+    format: {
+      type: "json_schema",
+      name: "manychat_real_estate_reply",
+      strict: true,
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          reply_text: { type: "string" },
+          status: {
+            type: "string",
+            enum: ["continue", "silent"]
+          },
+          next_step_label: { type: "string" },
+          lead_stage: {
+            type: "string",
+            enum: [
+              "New Lead",
+              "Interested",
+              "Budget Qualified",
+              "Property Sent",
+              "Visit Scheduled",
+              "Visited",
+              "Negotiation"
+            ]
+          },
+          media_intent: {
+            type: "string",
+            enum: ["none", "layout", "entrance", "pool", "render", "fotos"]
+          },
+          delay_seconds: {
+            type: "number",
+            minimum: 2,
+            maximum: 10
+          }
+        },
+        required: [
+          "reply_text",
+          "status",
+          "next_step_label",
+          "lead_stage",
+          "media_intent",
+          "delay_seconds"
+        ]
+      }
+    }
+  }
+});
+
+let parsed;
+
+try {
+  parsed = JSON.parse(ai.output_text);
+} catch (parseErr) {
+  console.log("AI RAW OUTPUT:", ai.output_text);
+
+  parsed = {
+    reply_text: 'Hubo un problema procesando tu mensaje 🙏 escríbeme otra vez en un solo mensaje.',
+    status: 'continue',
+    next_step_label: 'parse_error',
+    lead_stage: detectStageFallback(rawMsg, prevStage),
+    media_intent: 'none',
+    delay_seconds: 3
+  };
+}
 
 // 🔥 READ VALUES FROM MANYCHAT
 const messageCount = toNumber(body.message_count);
