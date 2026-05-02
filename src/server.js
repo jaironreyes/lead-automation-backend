@@ -75,6 +75,24 @@ function detectStageFallback(msg, prevStage) {
   return prevStage || 'New Lead';
 }
 
+function generateFallbackReply(msg, prevStage) {
+  const text = msg.toLowerCase();
+
+  if (text.includes('precio') || text.includes('cuesta')) {
+    return 'El precio actual es de RD$4.5M 👍 ¿Te gustaría ver opciones de financiamiento o coordinar una visita?';
+  }
+
+  if (text.includes('foto') || text.includes('ver')) {
+    return 'Claro 👍 puedo mostrarte fotos de la propiedad. ¿Quieres ver la distribución, la fachada o las amenidades?';
+  }
+
+  if (text.includes('dirección') || text.includes('ubicación')) {
+    return 'Está ubicado en Residencial Doña María, Santo Domingo Norte 👍 ¿Te gustaría coordinar una visita para verlo en persona?';
+  }
+
+  return 'Perfecto 👍 cuéntame, ¿te gustaría ver más detalles o coordinar una visita?';
+}
+
 function toNumber(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
@@ -1011,14 +1029,21 @@ Current user message:
 let parsed;
 
 try {
-parsed = JSON.parse(ai.output_text);
-} catch (parseErr) {
-  console.log("AI RAW OUTPUT:", ai.output_text);
+  const raw = ai.output_text?.trim();
 
+  if (!raw) throw new Error("Empty AI response");
+
+  parsed = JSON.parse(raw);
+
+} catch (parseErr) {
+  console.log("⚠️ AI PARSE ERROR:", parseErr.message);
+  console.log("⚠️ AI RAW OUTPUT:", ai.output_text);
+
+  // 🔥 SMART FALLBACK (keeps conversation alive)
   parsed = {
-    reply_text: 'Hubo un problema procesando tu mensaje 🙏 escríbeme otra vez en un solo mensaje.',
+    reply_text: generateFallbackReply(rawMsg, prevStage),
     status: 'continue',
-    next_step_label: 'parse_error',
+    next_step_label: 'fallback',
     lead_stage: detectStageFallback(rawMsg, prevStage),
     media_intent: 'none',
     delay_seconds: 3
