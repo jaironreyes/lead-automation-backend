@@ -994,7 +994,7 @@ if (parsed.media_intent && VALID_MEDIA.includes(parsed.media_intent)) {
 else {
 
   // GENERAL PROJECT PHOTOS
-  if (/\b(fotos|photos|pictures|imagenes|imágenes|project photos|fotos del proyecto)\b/i.test(msg)) {
+  if (/\b(fotos|photos|pictures|imagenes|imágenes|project photos|fotos del proyecto|barrio|sector)\b/i.test(msg)) {
     mediaIntent = 'fotos';
 
   // POOL
