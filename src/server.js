@@ -923,6 +923,9 @@ Return ONLY valid JSON:
 
 app.post('/webhooks/manychat', async (req, res) => {
   const body = req.body || {};
+  console.log("----- NEW REQUEST -----");
+  console.log("Incoming message:", body.last_user_message);
+  console.log("Lead stage:", body.lead_stage);
 
   try {
     const previousBotReply = body.ai_reply || '';
@@ -1162,6 +1165,8 @@ else {
 saveConversationMessage(userId, 'User', rawMsg);
 saveConversationMessage(userId, 'Bot', parsed.reply_text);
 
+console.log("Reply sent:", parsed.reply_text);
+    
 return res.json({
   ok: true,
   reply_text: parsed.reply_text,
