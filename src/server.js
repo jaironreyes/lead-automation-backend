@@ -989,14 +989,25 @@ const ai = await openai.responses.create({
           text: `
 Nombre: ${firstName}
 
-Current lead stage:
+CRITICAL CURRENT LEAD STAGE:
 "${prevStage}"
+
+IMPORTANT:
+You MUST respect this stage in your reply.
+If stage = "Visit Scheduled":
+- The visit is already confirmed
+- Do NOT ask to schedule again
+- Reinforce the visit naturally when relevant
 
 Recent conversation memory:
 ${recentConversation}
 
 Current user message:
 "${rawMsg}"
+
+Context instruction:
+Always combine the user's message with the current lead stage.
+Do not ignore the stage.
 `
         }
       ]
