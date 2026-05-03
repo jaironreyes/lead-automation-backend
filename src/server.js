@@ -1150,16 +1150,20 @@ else {
     
 saveConversationMessage(userId, 'User', rawMsg);
 saveConversationMessage(userId, 'Bot', parsed.reply_text);
+
+return res.json({
+  ok: true,
+  reply_text: parsed.reply_text,
   status: parsed.status || 'continue',
   next_step_label: parsed.next_step_label || 'info_requested',
 
   lead_stage: finalStage,
-  media_intent: mediaIntent, // 🔥 ADD THIS
+  media_intent: mediaIntent,
   delay_seconds: delaySeconds,
-  
+
   extracted: {
     lead_stage: finalStage,
-    media_intent: mediaIntent, // 🔥 ADD THIS
+    media_intent: mediaIntent,
     delay_seconds: delaySeconds,
     message_count: updatedMessageCount,
     price_question_count: updatedPriceQuestionCount,
