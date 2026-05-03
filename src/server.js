@@ -11,6 +11,39 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'lead-automation-backend' });
 });
 
+/* ---------------- TEMP BACKEND MEMORY ---------------- */
+
+const conversations = new Map();
+
+function getConversationHistory(userId) {
+  return conversations.get(userId) || [];
+}
+
+function saveConversationMessage(userId, role, text) {
+  if (!userId || !text) return;
+
+  const history = getConversationHistory(userId);
+
+  history.push({
+    role,
+    text: String(text).slice(0, 500),
+    timestamp: new Date().toISOString()
+  });
+
+  // Keep only last 12 messages
+  conversations.set(userId, history.slice(-12));
+}
+
+function formatConversationHistory(userId) {
+  const history = getConversationHistory(userId);
+
+  if (!history.length) return 'No previous conversation.';
+
+  return history
+    .map(m => `${m.role}: ${m.text}`)
+    .join('\n');
+}
+
 /* ---------------- CLEANING ---------------- */
 
 function normalizeText(text) {
@@ -902,9 +935,11 @@ app.post('/webhooks/manychat', async (req, res) => {
       return res.status(401).json({ error: 'Invalid secret' });
     }
 
-    const rawMsg = cleanIncomingMessage(body.last_user_message);
-    const firstName = body.first_name || '';
-    const prevStage = normalizeStage(body.lead_stage);
+  const rawMsg = cleanIncomingMessage(body.last_user_message);
+  const firstName = body.first_name || '';
+  const prevStage = normalizeStage(body.lead_stage);
+  const userId = String(body.user_id || body.contact_id || firstName || 'unknown');
+  const recentConversation = formatConversationHistory(userId);
 
   const cleanedPreviousBotReply = normalizeText(previousBotReply);
   const cleanedRawPreview = normalizeText(body.last_user_message);
@@ -958,14 +993,7 @@ Current lead stage:
 "${prevStage}"
 
 Recent conversation memory:
-User: "${userMsg2}"
-Bot: "${botReply2}"
-
-User: "${userMsg1}"
-Bot: "${botReply1}"
-
-Previous bot message:
-"${previousBotReply}"
+${recentConversation}
 
 Current user message:
 "${rawMsg}"
@@ -1120,9 +1148,8 @@ else {
   }
 }
     
-return res.json({
-  ok: true,
-  reply_text: parsed.reply_text,
+saveConversationMessage(userId, 'User', rawMsg);
+saveConversationMessage(userId, 'Bot', parsed.reply_text);
   status: parsed.status || 'continue',
   next_step_label: parsed.next_step_label || 'info_requested',
 
