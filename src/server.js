@@ -922,6 +922,7 @@ Return ONLY valid JSON:
 /* ---------------- WEBHOOK ---------------- */
 
 app.post('/webhooks/manychat', async (req, res) => {
+  const startTime = Date.now();
   const body = req.body || {};
   console.log("----- NEW REQUEST -----");
   console.log("Incoming message:", body.last_user_message);
@@ -1166,6 +1167,9 @@ saveConversationMessage(userId, 'User', rawMsg);
 saveConversationMessage(userId, 'Bot', parsed.reply_text);
 
 console.log("Reply sent:", parsed.reply_text);
+
+const totalTime = Date.now() - startTime;
+console.log(`⏱️ Total processing time: ${totalTime} ms`);
     
 return res.json({
   ok: true,
